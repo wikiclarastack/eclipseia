@@ -1,28 +1,33 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
     const { messages, prompt } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const chat = model.startChat({
-            history: [
-                { role: "user", parts: [{ text: prompt }] },
-                { role: "model", parts: [{ text: "Entendido. Sou a Eclipse IA, pronta para ajudar." }] },
-            ],
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [
+                    { role: "system", content: prompt },
+                    ...messages.map(m => ({
+                        role: m.role === 'model' ? 'assistant' : 'user',
+                        content: m.parts[0].text
+                    }))
+                ],
+                temperature: 0.7
+            })
         });
 
-        const lastUserMsg = messages[messages.length - 1].parts[0].text;
-        const result = await chat.sendMessage(lastUserMsg);
-        const response = await result.response;
-        const text = response.text();
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
 
-        res.status(200).json({ reply: text });
+        res.status(200).json({ reply });
     } catch (error) {
-        res.status(500).json({ reply: "Erro ao processar: " + error.message });
+        res.status(500).json({ reply: "Erro ao conectar com Groq: " + error.message });
     }
 }
