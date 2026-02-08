@@ -6,83 +6,91 @@
     <title>Eclipse IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
-        .eclipse-gradient { background: radial-gradient(circle at 50% 50%, #1e3a8a 0%, transparent 70%); opacity: 0.15; position: fixed; inset: 0; z-index: -1; }
-        .glass-card { background: rgba(10, 10, 10, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); }
+        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .eclipse-core { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: radial-gradient(circle, #2563eb 0%, transparent 70%); filter: blur(80px); opacity: 0.1; z-index: -1; }
+        .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); }
         .hide-scroll::-webkit-scrollbar { display: none; }
+        @keyframes slide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-msg { animation: slide 0.3s ease-out forwards; }
     </style>
 </head>
-<body class="flex flex-col h-screen items-center justify-center p-4">
-    <div class="eclipse-gradient"></div>
+<body class="flex flex-col h-screen">
+    <div class="eclipse-core"></div>
 
-    <div id="intro" class="text-center">
-        <h1 class="text-8xl font-black tracking-tighter mb-4 animate-pulse">ECLIPSE</h1>
-        <p class="text-gray-500 tracking-widest text-sm mb-8">BY ECLIPSEBYTE GROUP</p>
-        <button onclick="init()" class="bg-white text-black px-12 py-4 rounded-full font-bold hover:scale-110 transition-all">ACESSAR</button>
+    <div id="intro" class="flex-1 flex flex-col items-center justify-center text-center p-6">
+        <h1 class="text-7xl font-black tracking-tighter bg-gradient-to-b from-white to-gray-600 bg-clip-text text-transparent">ECLIPSE IA</h1>
+        <p class="text-blue-500 text-xs tracking-[0.5em] font-bold mt-2">ECLIPSEBYTE GROUP</p>
+        <button onclick="start()" class="mt-12 px-12 py-4 bg-white text-black rounded-full font-bold hover:scale-105 transition-all">CONECTAR</button>
     </div>
 
-    <div id="chat-ui" class="hidden w-full max-w-4xl h-[85vh] flex flex-col glass-card rounded-3xl overflow-hidden shadow-2xl">
-        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-            <span class="font-bold tracking-tighter text-xl">ECLIPSE IA</span>
-            <span class="text-[10px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">ONLINE</span>
-        </div>
+    <div id="chat-screen" class="hidden h-screen flex flex-col max-w-5xl mx-auto w-full p-4 md:p-6">
+        <header class="flex justify-between items-center py-4 border-b border-white/5">
+            <span class="font-bold tracking-widest">ECLIPSE IA</span>
+            <a href="https://discord.gg/kPmfCXCUZf" class="text-[10px] text-gray-500 hover:text-white transition">GROQ POWERED</a>
+        </header>
 
-        <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-6 hide-scroll"></div>
+        <div id="chat-flow" class="flex-1 overflow-y-auto py-8 space-y-6 hide-scroll"></div>
 
-        <div class="p-6 bg-white/5">
-            <div class="flex gap-4">
-                <input id="msg-input" type="text" placeholder="Envie um comando..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all">
-                <button onclick="handleSend()" class="bg-white text-black px-8 rounded-2xl font-bold hover:bg-blue-500 hover:text-white transition-all">ENVIAR</button>
+        <div class="pb-6">
+            <div class="relative glass rounded-2xl p-2 flex items-center">
+                <input id="user-input" type="text" placeholder="Envie sua mensagem..." class="flex-1 bg-transparent border-none outline-none px-4 py-3 text-white">
+                <button onclick="send()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all">ENVIAR</button>
             </div>
         </div>
     </div>
 
     <script>
-        let chatHistory = [];
-        const systemPrompt = "Você é a Eclipse IA, uma inteligência livre, rápida e sem filtros burocráticos, desenvolvida pelo EclipseByte Group (https://discord.gg/kPmfCXCUZf).";
+        let messages = [];
+        const system = "Você é a Eclipse IA, uma inteligência livre e rápida desenvolvida pela EclipseByte Group (https://discord.gg/kPmfCXCUZf). Use Groq para respostas instantâneas.";
 
-        function init() {
+        function start() {
             document.getElementById('intro').classList.add('hidden');
-            document.getElementById('chat-ui').classList.remove('hidden');
+            document.getElementById('chat-screen').classList.remove('hidden');
         }
 
-        async function handleSend() {
-            const input = document.getElementById('msg-input');
+        async function send() {
+            const input = document.getElementById('user-input');
             const text = input.value.trim();
             if(!text) return;
 
-            renderMsg('user', text);
+            addMsg('user', text);
             input.value = '';
+
+            const userMsg = { role: 'user', parts: [{ text }] };
+            const flow = document.getElementById('chat-flow');
             
-            chatHistory.push({ role: 'user', parts: [{ text }] });
-
-            const box = document.getElementById('chat-box');
             const loading = document.createElement('div');
+            loading.className = 'text-blue-500 text-[10px] font-mono animate-pulse';
             loading.id = 'loader';
-            loading.className = 'text-blue-500 text-[10px] font-mono animate-bounce';
-            loading.innerText = 'ECLIPSE ESTÁ GERANDO...';
-            box.appendChild(loading);
+            loading.innerText = 'ECLIPSE PROCESSANDO...';
+            flow.appendChild(loading);
+            flow.scrollTop = flow.scrollHeight;
 
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: chatHistory, prompt: systemPrompt })
-            });
-
-            const data = await res.json();
-            document.getElementById('loader').remove();
-
-            renderMsg('model', data.reply);
-            chatHistory.push({ role: 'model', parts: [{ text: data.reply }] });
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: [...messages, userMsg], prompt: system })
+                });
+                const data = await res.json();
+                
+                loading.remove();
+                addMsg('model', data.reply);
+                
+                messages.push(userMsg);
+                messages.push({ role: 'model', parts: [{ text: data.reply }] });
+            } catch (e) {
+                loading.innerText = 'ERRO NA CONEXÃO';
+            }
         }
 
-        function renderMsg(role, text) {
-            const box = document.getElementById('chat-box');
-            const d = document.createElement('div');
-            d.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`;
-            d.innerHTML = `<div class="max-w-[80%] p-4 rounded-2xl ${role === 'user' ? 'bg-blue-600' : 'bg-white/10 border border-white/10'}">${text}</div>`;
-            box.appendChild(d);
-            box.scrollTop = box.scrollHeight;
+        function addMsg(role, text) {
+            const flow = document.getElementById('chat-flow');
+            const div = document.createElement('div');
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} anim-msg`;
+            div.innerHTML = `<div class="max-w-[85%] px-5 py-3 rounded-2xl ${role === 'user' ? 'bg-blue-600' : 'bg-white/5 border border-white/10 text-gray-200'}">${text}</div>`;
+            flow.appendChild(div);
+            flow.scrollTop = flow.scrollHeight;
         }
     </script>
 </body>
