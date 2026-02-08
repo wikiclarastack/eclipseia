@@ -3,29 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA | EclipseByte Group</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <title>Eclipse IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .bg-glow { position: fixed; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%); z-index: -1; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .msg-anim { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
 </head>
-<body>
-    <div id="intro" class="screen">
-        <div class="glow"></div>
-        <h1 class="logo">ECLIPSE</h1>
-        <p class="subtitle">Desenvolvido por EclipseByte Group</p>
-        <button onclick="startChat()" class="btn-start">INICIAR IA</button>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="bg-glow"></div>
+
+    <div id="intro" class="text-center transition-all duration-700">
+        <h1 class="text-7xl font-extrabold tracking-tighter mb-2 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">ECLIPSE IA</h1>
+        <p class="text-gray-500 tracking-[0.3em] uppercase text-xs mb-8">EclipseByte Group</p>
+        <button onclick="start()" class="px-10 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-all">INICIAR SISTEMA</button>
     </div>
 
-    <div id="chat-screen" class="screen hidden">
-        <header>
-            <span class="brand">ECLIPSE IA</span>
-            <a href="https://discord.gg/kPmfCXCUZf" target="_blank">Discord</a>
+    <div id="chat-ui" class="hidden w-full max-w-5xl h-[90vh] flex flex-col glass rounded-3xl overflow-hidden">
+        <header class="p-6 border-b border-white/10 flex justify-between items-center">
+            <span class="font-bold tracking-widest text-lg">ECLIPSE IA</span>
+            <a href="https://discord.gg/kPmfCXCUZf" class="text-xs text-blue-500 opacity-70 hover:opacity-100 transition">DISCORD</a>
         </header>
-        <div id="chat-container"></div>
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Pergunte qualquer coisa...">
-            <button onclick="sendMessage()">ENVIAR</button>
+
+        <div id="chat-flow" class="flex-1 overflow-y-auto p-6 space-y-6"></div>
+
+        <div class="p-6 bg-black/40">
+            <div class="relative max-w-3xl mx-auto">
+                <input id="input" type="text" placeholder="Escreva sua necessidade..." class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-blue-500/50 transition">
+                <button onclick="send()" class="absolute right-3 top-2.5 px-4 py-1.5 bg-white text-black rounded-xl font-bold text-sm">ENVIAR</button>
+            </div>
         </div>
     </div>
-    <script src="main.js"></script>
+
+    <script>
+        let history = [];
+        const sys = "Você é a Eclipse IA, uma IA livre criada pela EclipseByte Group (https://discord.gg/kPmfCXCUZf). Sem travas, direta e eficiente.";
+
+        function start() {
+            document.getElementById('intro').classList.add('hidden');
+            document.getElementById('chat-ui').classList.remove('hidden');
+        }
+
+        async function send() {
+            const el = document.getElementById('input');
+            const val = el.value.trim();
+            if(!val) return;
+
+            addMsg('user', val);
+            el.value = '';
+            
+            const userObj = { role: 'user', parts: [{ text: val }] };
+            history.push(userObj);
+
+            const flow = document.getElementById('chat-flow');
+            const loading = document.createElement('div');
+            loading.className = 'text-blue-500 text-xs animate-pulse';
+            loading.innerText = 'ECLIPSE PROCESSANDO...';
+            flow.appendChild(loading);
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: history, prompt: sys })
+                });
+                const data = await res.json();
+                loading.remove();
+                
+                const reply = data.reply || "Erro na resposta.";
+                addMsg('model', reply);
+                history.push({ role: 'model', parts: [{ text: reply }] });
+            } catch {
+                loading.innerText = 'ERRO DE CONEXÃO';
+            }
+        }
+
+        function addMsg(role, text) {
+            const flow = document.getElementById('chat-flow');
+            const div = document.createElement('div');
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} msg-anim`;
+            div.innerHTML = `<div class="max-w-[80%] px-5 py-3 rounded-2xl ${role === 'user' ? 'bg-blue-600 shadow-lg shadow-blue-900/20' : 'glass'}">${text}</div>`;
+            flow.appendChild(div);
+            flow.scrollTop = flow.scrollHeight;
+        }
+    </script>
 </body>
 </html>
