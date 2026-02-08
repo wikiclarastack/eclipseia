@@ -4,144 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eclipse IA</title>
-    <meta name="keywords" content="Xeno, script executor, keyless executor, Roblox executor, scripting, exploit, cheat, hack, Executor" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { scroll-behavior: smooth; transition: all 0.2s ease-out; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow-x: hidden; }
+        * { scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; margin: 0; overflow: hidden; }
         
-        .tos-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .tos-card { background: #080808; border: 1px solid #111; padding: 40px; border-radius: 20px; max-width: 450px; width: 100%; text-align: center; }
+        .tos-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .tos-card { background: #050505; border: 1px solid #111; padding: 40px; max-width: 400px; width: 90%; text-align: center; }
         
-        .sidebar { background: #050505; width: 260px; border-right: 1px solid #111; height: 100vh; flex-shrink: 0; z-index: 100; }
+        .sidebar { background: #050505; width: 280px; border-right: 1px solid #111; height: 100vh; flex-shrink: 0; z-index: 100; display: none; }
         
-        .chat-card { border-radius: 10px; cursor: pointer; padding: 12px; margin-bottom: 6px; background: rgba(255,255,255,0.02); border: 1px solid transparent; }
-        .chat-card.active { background: #111; border-color: #222; }
+        .chat-card { cursor: pointer; padding: 15px; margin-bottom: 5px; background: rgba(255,255,255,0.02); transition: 0.2s; border-radius: 4px; }
+        .chat-card:hover { background: rgba(255,255,255,0.05); }
+        .chat-card.active { background: #fff; color: #000; font-weight: 800; }
         
-        .msg-container { max-width: 850px; margin: 0 auto; padding: 20px; width: 100%; }
+        .msg-container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; }
         
-        pre { background: #0a0a0a !important; border-radius: 12px; padding: 20px; border: 1px solid #1a1a1a; position: relative; margin: 20px 0; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; font-size: 10px; background: #1a1a1a; border: 1px solid #333; padding: 5px 10px; border-radius: 6px; color: #eee; cursor: pointer; }
+        pre { background: #0a0a0a !important; padding: 20px; border: 1px solid #1a1a1a; position: relative; margin: 20px 0; border-radius: 8px; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; font-size: 10px; background: #1a1a1a; border: 1px solid #333; padding: 5px 10px; color: #eee; cursor: pointer; }
 
-        .fade-in { animation: fadeIn 0.6s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .flipper { height: 40px; overflow: hidden; margin-top: 10px; }
+        .flipper-inner { animation: flip 6s infinite; }
+        .flipper-inner div { height: 40px; display: flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 4px; font-weight: 800; color: #555; }
 
-        #chat-ui { display: none; }
-        .disabled-btn { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
+        @keyframes flip {
+            0%, 30% { transform: translateY(0); }
+            33%, 63% { transform: translateY(-40px); }
+            66%, 96% { transform: translateY(-80px); }
+            100% { transform: translateY(0); }
+        }
+
+        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; }
+        .disabled-btn { opacity: 0.2; cursor: not-allowed; }
     </style>
 </head>
 <body class="flex">
 
     <div id="tos-screen" class="tos-overlay">
-        <div class="tos-card fade-in">
-            <h2 class="text-xl font-extrabold mb-6 tracking-tight text-white uppercase">Termos de Uso</h2>
-            <div class="text-left text-gray-600 text-[13px] h-40 overflow-y-auto mb-8 pr-2 leading-relaxed">
-                <p class="mb-4">Este serviço é fornecido pela EclipseByte Group "como está". Não nos responsabilizamos por quaisquer scripts ou conteúdos gerados.</p>
-                <p class="mb-4">O uso indevido da API ou tentativas de bypass resultarão em bloqueio de hardware e IP.</p>
-                <p>Ao prosseguir, você aceita total responsabilidade legal pelo uso desta ferramenta.</p>
+        <div class="tos-card">
+            <h2 class="text-xs font-black mb-8 tracking-[0.5em] uppercase text-white">Termos</h2>
+            <div class="text-left text-gray-600 text-[11px] h-32 overflow-y-auto mb-8 leading-relaxed uppercase">
+                O uso da Eclipse IA implica em aceitação total de risco. Não monitoramos logs. Não censuramos respostas. Você é o único responsável pelo uso dos scripts gerados aqui.
             </div>
-            <button id="tos-btn" onclick="acceptTos()" class="disabled-btn bg-white text-black w-full py-4 rounded-lg font-black transition text-xs">AGUARDE (5S)</button>
+            <button id="tos-btn" onclick="acceptTos()" class="disabled-btn bg-white text-black w-full py-4 font-black text-[10px] transition">AGUARDE (5S)</button>
         </div>
     </div>
 
-    <aside id="sidebar" class="sidebar hidden flex-col p-6">
-        <div class="flex items-center gap-2 mb-10 font-extrabold text-white text-sm tracking-tighter">
-            <div class="w-4 h-4 bg-white"></div>
-            <span>ECLIPSE IA</span>
-        </div>
-        <button onclick="createNewChat()" class="mb-6 w-full py-3 bg-white/5 rounded-lg hover:bg-white/10 text-[10px] font-bold uppercase tracking-widest">+ Novo Chat</button>
+    <aside id="sidebar" class="sidebar flex-col p-6">
+        <div class="text-white font-black text-lg tracking-tighter mb-10">ECLIPSE</div>
+        <button onclick="createNewChat()" class="mb-8 w-full py-3 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition">+ Nova Sessão</button>
         <div id="chat-list" class="flex-1 overflow-y-auto"></div>
-        <div class="mt-auto pt-4 border-t border-white/5 text-center">
-            <a href="https://discord.gg/kPmfCXCUZf" target="_blank" class="text-[9px] text-gray-700 font-bold hover:text-white uppercase tracking-widest">Discord</a>
-        </div>
+        <div class="mt-auto text-[9px] text-gray-700 font-bold uppercase tracking-widest text-center">EclipseByte Group</div>
     </aside>
 
-    <main id="main-content" class="flex-1 h-screen overflow-y-auto relative bg-black">
+    <main id="main-content" class="flex-1 h-screen relative flex flex-col">
         
-        <div id="landing-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <div class="fade-in">
-                <h1 class="text-8xl md:text-[11rem] font-extrabold tracking-tighter mb-4 text-white leading-none">ECLIPSE</h1>
-                <p class="text-lg md:text-xl font-semibold text-gray-500 mb-14 tracking-[0.2em] uppercase">Rápida, Sem Censura, Grátis</p>
-                <div class="flex flex-col md:flex-row gap-8 justify-center items-center">
-                    <button onclick="startApp()" class="bg-white text-black px-14 py-5 rounded-sm font-black text-xs hover:bg-gray-200 transition">ENTRAR</button>
-                    <a href="#about-section" class="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-800 hover:text-white transition">Saiba Mais ↓</a>
+        <div id="landing-screen" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <h1 class="text-8xl md:text-[12rem] font-black tracking-tighter text-white leading-none">ECLIPSE</h1>
+            
+            <div class="flipper text-xl">
+                <div class="flipper-inner">
+                    <div>Rápida</div>
+                    <div>Sem Censura</div>
+                    <div>Grátis</div>
                 </div>
+            </div>
+
+            <div class="mt-16 flex flex-col items-center gap-6">
+                <button onclick="startApp()" class="bg-white text-black px-16 py-5 font-black text-xs hover:scale-105 transition">ENTRAR</button>
+                <a href="#about" class="text-[10px] text-gray-700 font-bold uppercase tracking-[0.4em] hover:text-white transition">Saiba Mais ↓</a>
             </div>
         </div>
 
-        <section id="about-section" class="min-h-screen flex flex-col items-center justify-center p-12 bg-black border-t border-white/5">
-            <div class="max-w-4xl text-center">
-                <h3 class="text-3xl font-extrabold mb-8 uppercase tracking-tighter">Performance Bruta</h3>
-                <p class="text-gray-600 leading-relaxed text-lg font-medium">Motor de processamento otimizado para scripts e automação. Sem limites de segurança artificiais, sem delays, sem chaves.</p>
-            </div>
-        </section>
-
-        <div id="chat-ui" class="h-screen flex flex-col fixed inset-0 bg-black z-[101]">
-            <header class="p-4 border-b border-white/5 flex justify-between items-center bg-black">
-                <button onclick="toggleSidebar()" class="text-white text-xl">☰</button>
-                <div class="text-[9px] font-black text-gray-700 tracking-[0.5em] uppercase">Eclipse Streaming</div>
-                <div class="w-8"></div>
+        <div id="chat-ui">
+            <header class="p-6 border-b border-white/5 flex justify-between items-center">
+                <button onclick="toggleSidebar()" class="text-white font-bold text-xs uppercase tracking-widest">Menu</button>
+                <div class="text-[10px] font-black text-gray-800 tracking-[0.5em] uppercase">Eclipse IA</div>
+                <button onclick="location.reload()" class="text-gray-500 font-bold text-[10px] uppercase">Sair</button>
             </header>
+            
             <div id="chat-flow" class="flex-1 overflow-y-auto"></div>
+            
             <div class="p-6 md:p-12">
-                <div class="max-w-3xl mx-auto flex gap-3 items-center bg-[#080808] p-1.5 rounded-lg border border-white/5">
-                    <input id="user-input" type="text" placeholder="Digite seu comando..." class="flex-1 bg-transparent py-3 px-4 outline-none text-sm">
-                    <button onclick="handleSend()" class="bg-white text-black px-8 py-3 rounded-md font-black text-[10px] uppercase">Enviar</button>
+                <div class="max-w-3xl mx-auto flex gap-4 bg-[#080808] p-2 border border-white/5">
+                    <input id="user-input" type="text" placeholder="Prompt..." class="flex-1 bg-transparent py-3 px-4 outline-none text-sm text-white">
+                    <button onclick="handleSend()" class="bg-white text-black px-8 py-3 font-black text-[10px] uppercase">Enviar</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        let chats = JSON.parse(localStorage.getItem('eclipse_v10')) || [];
+        let chats = JSON.parse(localStorage.getItem('eclipse_v11')) || [];
         let currentId = null;
 
         window.onload = () => {
-            if (localStorage.getItem('eclipse_tos_accepted')) {
+            if (localStorage.getItem('eclipse_tos_v11')) {
                 document.getElementById('tos-screen').style.display = 'none';
             } else {
-                let timeLeft = 5;
+                let sec = 5;
                 const btn = document.getElementById('tos-btn');
                 const timer = setInterval(() => {
-                    timeLeft--;
-                    btn.innerText = `AGUARDE (${timeLeft}S)`;
-                    if (timeLeft <= 0) {
+                    sec--;
+                    btn.innerText = `AGUARDE (${sec}S)`;
+                    if(sec <= 0) {
                         clearInterval(timer);
-                        btn.innerText = "ACEITAR E ENTRAR";
+                        btn.innerText = "ACEITAR";
                         btn.classList.remove('disabled-btn');
                     }
                 }, 1000);
             }
-            renderChatList();
         };
 
         function acceptTos() {
-            localStorage.setItem('eclipse_tos_accepted', 'true');
+            localStorage.setItem('eclipse_tos_v11', 'true');
             document.getElementById('tos-screen').style.display = 'none';
         }
 
         function startApp() {
             document.getElementById('landing-screen').style.display = 'none';
-            document.getElementById('sidebar').classList.remove('hidden');
-            document.getElementById('sidebar').classList.add('flex');
+            document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('chat-ui').style.display = 'flex';
+            renderChatList(); // Garante que os chats apareçam ao entrar
             if (chats.length > 0) switchChat(chats[0].id);
             else createNewChat();
         }
 
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
-            sb.classList.toggle('hidden');
-            if(!sb.classList.contains('hidden')) sb.classList.add('flex');
+            sb.style.display = (sb.style.display === 'none' || sb.style.display === '') ? 'flex' : 'none';
         }
 
         function createNewChat() {
             const id = Date.now();
-            chats.unshift({ id, title: 'Nova Sessão', messages: [] });
+            chats.unshift({ id, title: 'Nova Conversa', messages: [] });
             currentId = id;
             save();
             renderChatList();
@@ -175,35 +175,11 @@
                 });
                 const data = await res.json();
                 loader.remove();
-                
-                const modelMsg = { role: 'model', parts: [{ text: '' }] };
-                activeChat.messages.push(modelMsg);
-                
-                await typeEffect(data.reply, modelMsg);
+                activeChat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
                 save();
+                renderMessages();
+                renderChatList();
             } catch(e) { loader.innerText = "Erro."; }
-        }
-
-        async function typeEffect(text, msgObj) {
-            const container = document.getElementById('chat-flow');
-            const lastMsgDiv = container.lastElementChild.querySelector('.model-text');
-            let i = 0;
-            return new Promise(resolve => {
-                const interval = setInterval(() => {
-                    msgObj.parts[0].text += text.charAt(i);
-                    lastMsgDiv.innerHTML = marked.parse(msgObj.parts[0].text);
-                    container.scrollTop = container.scrollHeight;
-                    i++;
-                    if (i >= text.length) {
-                        clearInterval(interval);
-                        lastMsgDiv.querySelectorAll('pre code').forEach(c => {
-                            hljs.highlightElement(c);
-                            addCopyBtn(c);
-                        });
-                        resolve();
-                    }
-                }, 10);
-            });
         }
 
         function renderMessages() {
@@ -215,11 +191,11 @@
             activeChat.messages.forEach(m => {
                 const isModel = m.role === 'model';
                 const div = document.createElement('div');
-                div.className = `py-12 ${isModel ? 'bg-white/[0.01]' : ''}`;
+                div.className = `py-10 ${isModel ? 'bg-white/[0.01]' : ''}`;
                 div.innerHTML = `
                     <div class="msg-container">
-                        <span class="text-[9px] font-bold text-gray-800 uppercase tracking-widest block mb-4">${isModel ? 'Eclipse' : 'Você'}</span>
-                        <div class="model-text text-[15px] leading-relaxed text-gray-300 font-medium">
+                        <span class="text-[9px] font-bold text-gray-700 uppercase tracking-[0.2em] mb-4 block">${isModel ? 'Eclipse' : 'Você'}</span>
+                        <div class="text-[15px] leading-relaxed text-gray-300">
                             ${isModel ? marked.parse(m.parts[0].text) : m.parts[0].text}
                         </div>
                     </div>`;
@@ -228,21 +204,12 @@
             
             container.querySelectorAll('pre code').forEach(c => {
                 hljs.highlightElement(c);
-                addCopyBtn(c);
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn'; btn.innerText = 'Copiar';
+                btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'Copiado!'; setTimeout(()=>btn.innerText='Copiar', 2000); };
+                c.parentElement.appendChild(btn);
             });
             container.scrollTop = container.scrollHeight;
-        }
-
-        function addCopyBtn(el) {
-            if(el.parentElement.querySelector('.copy-btn')) return;
-            const btn = document.createElement('button');
-            btn.className = 'copy-btn'; btn.innerText = 'Copiar';
-            btn.onclick = () => {
-                navigator.clipboard.writeText(el.innerText);
-                btn.innerText = 'Copiado!';
-                setTimeout(() => btn.innerText = 'Copiar', 2000);
-            };
-            el.parentElement.appendChild(btn);
         }
 
         function renderChatList() {
@@ -252,8 +219,8 @@
                 const div = document.createElement('div');
                 div.className = `chat-card flex justify-between items-center ${c.id === currentId ? 'active' : ''}`;
                 div.onclick = () => switchChat(c.id);
-                div.innerHTML = `<span class="text-[10px] font-bold truncate uppercase tracking-tighter">${c.title}</span>
-                                <button onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-gray-800 hover:text-red-500 transition px-1">✕</button>`;
+                div.innerHTML = `<span class="text-[10px] uppercase truncate">${c.title}</span>
+                                <button onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-gray-500 hover:text-red-500 transition">✕</button>`;
                 list.appendChild(div);
             });
         }
@@ -268,13 +235,13 @@
 
         function createLoader() {
             const div = document.createElement('div');
-            div.className = 'py-12';
-            div.innerHTML = `<div class="msg-container"><span class="text-[9px] font-bold text-gray-800 animate-pulse uppercase tracking-widest">Processando...</span></div>`;
+            div.className = 'py-10 opacity-30';
+            div.innerHTML = `<div class="msg-container text-[9px] font-bold uppercase tracking-widest">Processando...</div>`;
             document.getElementById('chat-flow').appendChild(div);
             return div;
         }
 
-        function save() { localStorage.setItem('eclipse_v10', JSON.stringify(chats)); }
+        function save() { localStorage.setItem('eclipse_v11', JSON.stringify(chats)); }
         document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend() });
     </script>
 </body>
