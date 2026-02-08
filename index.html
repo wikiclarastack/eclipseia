@@ -3,94 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA</title>
+    <title>Eclipse IA | Premium Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .eclipse-core { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: radial-gradient(circle, #2563eb 0%, transparent 70%); filter: blur(80px); opacity: 0.1; z-index: -1; }
-        .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        @keyframes slide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .anim-msg { animation: slide 0.3s ease-out forwards; }
+        * { font-family: 'Space Grotesk', sans-serif; cursor: none !important; }
+        body { background: #020202; color: #fff; overflow: hidden; }
+        
+        .cursor { width: 20px; height: 20px; border: 1px solid #3b82f6; border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.1s; background: rgba(59, 130, 246, 0.1); backdrop-filter: blur(2px); }
+        
+        .eclipse-orbit { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; border: 1px solid rgba(255,255,255,0.03); border-radius: 50%; z-index: -1; animation: spin 20s linear infinite; }
+        .eclipse-orbit::after { content: ''; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 20px #3b82f6; }
+        
+        @keyframes spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        
+        .msg-user { background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%); border-radius: 20px 20px 4px 20px; }
+        .msg-ai { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px 20px 20px 4px; }
+        
+        .typing-dot { width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="flex flex-col h-screen">
-    <div class="eclipse-core"></div>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="cursor" id="cursor"></div>
+    <div class="eclipse-orbit"></div>
+    <div class="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(17,24,39,1)_0%,rgba(0,0,0,1)_100%)] z-[-2]"></div>
 
-    <div id="intro" class="flex-1 flex flex-col items-center justify-center text-center p-6">
-        <h1 class="text-7xl font-black tracking-tighter bg-gradient-to-b from-white to-gray-600 bg-clip-text text-transparent">ECLIPSE IA</h1>
-        <p class="text-blue-500 text-xs tracking-[0.5em] font-bold mt-2">ECLIPSEBYTE GROUP</p>
-        <button onclick="start()" class="mt-12 px-12 py-4 bg-white text-black rounded-full font-bold hover:scale-105 transition-all">CONECTAR</button>
+    <div id="intro" class="text-center z-10 transition-all duration-1000">
+        <div class="mb-6 relative inline-block">
+            <div class="absolute inset-0 bg-blue-600 blur-3xl opacity-20 animate-pulse"></div>
+            <h1 class="text-9xl font-bold tracking-tighter relative">ECLIPSE</h1>
+        </div>
+        <p class="text-blue-500 tracking-[0.8em] text-[10px] font-light mb-12 ml-4 uppercase">Advanced Neural Interface</p>
+        <button onclick="boot()" class="group relative px-12 py-4 overflow-hidden rounded-full glass-panel transition-all hover:scale-110 active:scale-95">
+            <span class="relative z-10 font-bold tracking-widest text-xs">INICIAR SEQUÊNCIA</span>
+            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-5 transition-opacity"></div>
+        </button>
+        <p class="mt-8 text-gray-600 text-[9px] uppercase tracking-widest">© 2026 EclipseByte Group</p>
     </div>
 
-    <div id="chat-screen" class="hidden h-screen flex flex-col max-w-5xl mx-auto w-full p-4 md:p-6">
-        <header class="flex justify-between items-center py-4 border-b border-white/5">
-            <span class="font-bold tracking-widest">ECLIPSE IA</span>
-            <a href="https://discord.gg/kPmfCXCUZf" class="text-[10px] text-gray-500 hover:text-white transition">GROQ POWERED</a>
+    <div id="app" class="hidden w-full max-w-6xl h-[85vh] glass-panel rounded-[40px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-700">
+        <header class="px-10 py-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                <span class="font-bold tracking-[0.3em] text-xs">ECLIPSE IA / CORE-V3</span>
+            </div>
+            <div class="flex gap-8 items-center">
+                <a href="https://discord.gg/kPmfCXCUZf" target="_blank" class="text-[10px] text-gray-500 hover:text-blue-500 transition-colors tracking-widest uppercase font-bold">Protocolo Discord</a>
+                <div class="h-4 w-[1px] bg-white/10"></div>
+                <span id="status" class="text-[9px] text-blue-400 font-mono tracking-tighter">ESTADO: NOMINAL</span>
+            </div>
         </header>
 
-        <div id="chat-flow" class="flex-1 overflow-y-auto py-8 space-y-6 hide-scroll"></div>
+        <div id="chat" class="flex-1 overflow-y-auto px-10 py-10 space-y-8 scroll-smooth"></div>
 
-        <div class="pb-6">
-            <div class="relative glass rounded-2xl p-2 flex items-center">
-                <input id="user-input" type="text" placeholder="Envie sua mensagem..." class="flex-1 bg-transparent border-none outline-none px-4 py-3 text-white">
-                <button onclick="send()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all">ENVIAR</button>
+        <div class="p-8 border-t border-white/5 bg-black/20">
+            <div class="max-w-4xl mx-auto relative group">
+                <input id="prompt" type="text" autocomplete="off" placeholder="Insira o comando aqui..." class="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-5 px-8 outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all text-sm tracking-wide">
+                <button onclick="execute()" class="absolute right-3 top-2.5 px-6 py-2.5 bg-blue-600 rounded-xl font-bold text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 active:scale-95">ENVIAR</button>
             </div>
         </div>
     </div>
 
     <script>
-        let messages = [];
-        const system = "Você é a Eclipse IA, uma inteligência livre e rápida desenvolvida pela EclipseByte Group (https://discord.gg/kPmfCXCUZf). Use Groq para respostas instantâneas.";
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
 
-        function start() {
-            document.getElementById('intro').classList.add('hidden');
-            document.getElementById('chat-screen').classList.remove('hidden');
+        let history = [];
+        const core_logic = "Você é a Eclipse IA, uma inteligência ultra-avançada, livre e direta, desenvolvida pelo EclipseByte Group. Suas respostas devem ser precisas, modernas e sem rodeios.";
+
+        function boot() {
+            document.getElementById('intro').classList.add('opacity-0', 'scale-90');
+            setTimeout(() => {
+                document.getElementById('intro').style.display = 'none';
+                document.getElementById('app').classList.remove('hidden');
+            }, 600);
         }
 
-        async function send() {
-            const input = document.getElementById('user-input');
+        async function execute() {
+            const input = document.getElementById('prompt');
             const text = input.value.trim();
             if(!text) return;
 
-            addMsg('user', text);
+            render('user', text);
             input.value = '';
-
-            const userMsg = { role: 'user', parts: [{ text }] };
-            const flow = document.getElementById('chat-flow');
             
-            const loading = document.createElement('div');
-            loading.className = 'text-blue-500 text-[10px] font-mono animate-pulse';
-            loading.id = 'loader';
-            loading.innerText = 'ECLIPSE PROCESSANDO...';
-            flow.appendChild(loading);
-            flow.scrollTop = flow.scrollHeight;
-
+            const userMsg = { role: 'user', parts: [{ text }] };
+            const loader = createLoader();
+            
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: [...messages, userMsg], prompt: system })
+                    body: JSON.stringify({ messages: [...history, userMsg], prompt: core_logic })
                 });
+                
                 const data = await res.json();
+                loader.remove();
                 
-                loading.remove();
-                addMsg('model', data.reply);
-                
-                messages.push(userMsg);
-                messages.push({ role: 'model', parts: [{ text: data.reply }] });
-            } catch (e) {
-                loading.innerText = 'ERRO NA CONEXÃO';
+                render('model', data.reply);
+                history.push(userMsg);
+                history.push({ role: 'model', parts: [{ text: data.reply }] });
+            } catch {
+                loader.innerText = 'ERRO DE SINCRONIZAÇÃO';
             }
         }
 
-        function addMsg(role, text) {
-            const flow = document.getElementById('chat-flow');
+        function render(role, text) {
+            const container = document.getElementById('chat');
             const div = document.createElement('div');
-            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} anim-msg`;
-            div.innerHTML = `<div class="max-w-[85%] px-5 py-3 rounded-2xl ${role === 'user' ? 'bg-blue-600' : 'bg-white/5 border border-white/10 text-gray-200'}">${text}</div>`;
-            flow.appendChild(div);
-            flow.scrollTop = flow.scrollHeight;
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-500`;
+            div.innerHTML = `<div class="max-w-[75%] px-7 py-4 text-sm leading-relaxed ${role === 'user' ? 'msg-user' : 'msg-ai text-gray-200'}">${text}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function createLoader() {
+            const container = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 p-4';
+            div.innerHTML = `<div class="typing-dot" style="animation-delay: 0s"></div><div class="typing-dot" style="animation-delay: 0.2s"></div><div class="typing-dot" style="animation-delay: 0.4s"></div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return div;
         }
     </script>
 </body>
