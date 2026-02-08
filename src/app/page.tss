@@ -1,0 +1,122 @@
+'use client';
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+export default function EclipseIA() {
+  const [started, setStarted] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const systemPrompt = "Você é a Eclipse IA, uma inteligência artificial livre e prestativa, desenvolvida pelo EclipseByte Group (https://discord.gg/kPmfCXCUZf). Foco em velocidade e sem travas.";
+
+  async function sendMessage() {
+    if (!input.trim() || loading) return;
+
+    const userMsg = { role: 'user', parts: [{ text: input }] };
+    const updatedMessages = [...messages, userMsg];
+    
+    setMessages(updatedMessages);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: updatedMessages, systemPrompt }),
+      });
+
+      const data = await res.json();
+      if (data.reply) {
+        setMessages([...updatedMessages, { role: 'model', parts: [{ text: data.reply }] }]);
+      }
+    } catch (e) {
+      console.error("Erro ao enviar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#050505] text-white selection:bg-blue-500/30">
+      <AnimatePresence mode="wait">
+        {!started ? (
+          <motion.div 
+            key="intro"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center justify-center h-screen text-center px-4"
+          >
+            <div className="absolute w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
+            <motion.h1 
+              initial={{ letterSpacing: '0.2em', opacity: 0 }}
+              animate={{ letterSpacing: '0.05em', opacity: 1 }}
+              className="text-7xl font-black tracking-tighter mb-4 z-10 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent"
+            >
+              ECLIPSE
+            </motion.h1>
+            <p className="text-gray-400 mb-8 z-10 tracking-widest text-sm uppercase">Powered by EclipseByte Group</p>
+            <button 
+              onClick={() => setStarted(true)}
+              className="z-10 bg-white text-black px-10 py-4 rounded-full font-bold hover:scale-105 transition-transform active:scale-95"
+            >
+              ACESSAR IA
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="chat"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto h-screen flex flex-col p-4 md:p-8"
+          >
+            <div className="flex items-center justify-between pb-6 border-b border-white/5">
+              <h2 className="text-xl font-bold tracking-tighter">ECLIPSE IA</h2>
+              <a href="https://discord.gg/kPmfCXCUZf" target="_blank" className="text-xs text-blue-400 hover:underline">Comunidade</a>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-6 py-8 scrollbar-hide">
+              {messages.length === 0 && (
+                <div className="text-center text-gray-600 mt-20 italic">Como posso ser útil hoje?</div>
+              )}
+              {messages.map((m, i) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: m.role === 'user' ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  key={i} 
+                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[85%] px-5 py-3 rounded-2xl leading-relaxed ${
+                    m.role === 'user' ? 'bg-blue-600 font-medium' : 'bg-white/5 border border-white/10 text-gray-200'
+                  }`}>
+                    {m.parts[0].text}
+                  </div>
+                </motion.div>
+              ))}
+              {loading && <div className="text-blue-500 text-sm animate-pulse">Eclipse está pensando...</div>}
+            </div>
+
+            <div className="pt-4">
+              <div className="relative flex items-center">
+                <input 
+                  autoFocus
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Escreva sua mensagem..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 pr-16 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.08] transition-all"
+                />
+                <button 
+                  onClick={sendMessage}
+                  className="absolute right-4 p-2 bg-white text-black rounded-xl hover:bg-blue-500 hover:text-white transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </main>
+  );
+}
