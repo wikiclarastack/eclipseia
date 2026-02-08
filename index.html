@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eclipse IA | EclipseByte Group</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+</head>
+<body>
+    <div id="intro" class="screen">
+        <div class="glow"></div>
+        <h1 class="logo">ECLIPSE</h1>
+        <p class="subtitle">Desenvolvido por EclipseByte Group</p>
+        <button onclick="startChat()" class="btn-start">INICIAR IA</button>
+    </div>
+
+    <div id="chat-screen" class="screen hidden">
+        <header>
+            <span class="brand">ECLIPSE IA</span>
+            <a href="https://discord.gg/kPmfCXCUZf" target="_blank">Discord</a>
+        </header>
+        <div id="chat-container"></div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Pergunte qualquer coisa...">
+            <button onclick="sendMessage()">ENVIAR</button>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
