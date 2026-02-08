@@ -3,105 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA | Neural System</title>
+    <title>Eclipse IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/one-light.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { font-family: 'Space Grotesk', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; color: #fff; height: 100vh; display: flex; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background: #ffffff; color: #1a1a1a; transition: all 0.3s; }
+        .sidebar { background: #f9f9f9; width: 280px; transition: transform 0.3s ease; border-right: 1px solid #eee; }
+        .chat-card { transition: 0.2s; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px; margin-bottom: 4px; }
+        .chat-card:hover { background: #ececec; }
+        .chat-card.active { background: #e2e2e2; font-weight: 500; }
         
-        .glass { background: rgba(255, 255, 255, 0.015); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .msg-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .role-label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+        .role-eclipse { color: #2563eb; }
+        .role-you { color: #666; }
         
-        /* Mobile Sidebar Logic */
-        .sidebar { width: 280px; flex-shrink: 0; z-index: 50; transition: transform 0.3s ease; }
+        pre { background: #f4f4f4 !important; border-radius: 8px; padding: 16px; border: 1px solid #ddd; position: relative; margin: 10px 0; }
+        .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 10px; background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); height: 100%; }
+            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); z-index: 50; }
             .sidebar.open { transform: translateX(0); }
-            .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 40; backdrop-filter: blur(4px); }
+            .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 40; }
             .overlay.active { display: block; }
         }
-
-        .chat-item.active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent); border-left: 3px solid #3b82f6; }
-        
-        /* Premium Code Block */
-        pre { background: #0d1117 !important; padding: 1rem; border-radius: 12px; border: 1px solid #30363d; margin: 1rem 0; position: relative; font-size: 0.8rem; }
-        .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 9px; background: #21262d; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; color: #c9d1d9; }
-        
-        /* Inappropriate Alert Overlay */
-        #alert-system { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9); border: 2px solid #ef4444; align-items: center; justify-content: center; backdrop-filter: blur(10px); animation: pulseRed 1.5s infinite; }
-        @keyframes pulseRed { 0% { box-shadow: inset 0 0 50px #000; } 50% { box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.2); } 100% { box-shadow: inset 0 0 50px #000; } }
-
-        .glow-dot { width: 4px; height: 4px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; animation: bounce 1s infinite alternate; }
-        @keyframes bounce { to { transform: translateY(-4px); opacity: 0.3; } }
+        .intro-btn { background: #1a1a1a; color: white; padding: 12px 30px; border-radius: 99px; font-weight: 500; transition: 0.2s; }
+        .intro-btn:hover { opacity: 0.8; transform: translateY(-2px); }
     </style>
 </head>
-<body>
+<body class="flex h-screen overflow-hidden">
     <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
-    <aside id="sidebar" class="sidebar glass flex flex-col p-5">
-        <div class="flex items-center justify-between mb-10">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-blue-600 rounded shadow-lg shadow-blue-600/40"></div>
-                <span class="font-bold tracking-tighter text-xl italic">ECLIPSE</span>
-            </div>
-            <button class="md:hidden text-gray-500" onclick="toggleSidebar()">✕</button>
+    <aside id="sidebar" class="sidebar flex flex-col p-4 overflow-hidden">
+        <div class="flex items-center gap-2 mb-8 px-2">
+            <div class="w-6 h-6 bg-black rounded-md"></div>
+            <h1 class="text-xl font-bold tracking-tight">Eclipse IA</h1>
         </div>
 
-        <button onclick="createNewChat()" class="w-full py-4 px-4 glass border border-white/10 rounded-2xl flex items-center gap-3 hover:bg-white/5 transition-all mb-8 group">
-            <span class="text-blue-500 font-bold text-xl">+</span>
-            <span class="text-sm font-bold tracking-tight">Reiniciar Núcleo</span>
+        <button onclick="createNewChat()" class="mb-6 w-full py-3 border border-gray-300 rounded-xl hover:bg-white transition-all text-sm font-medium">
+            + Nova Conversa
         </button>
 
-        <div id="chat-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+        <div id="chat-list" class="flex-1 overflow-y-auto space-y-1"></div>
 
-        <div class="pt-5 mt-auto border-t border-white/5">
-            <p class="text-[8px] uppercase tracking-[0.4em] text-gray-600 text-center font-bold">EclipseByte Protocol</p>
+        <div class="mt-auto p-2 text-[10px] text-gray-400 text-center border-t pt-4">
+            EclipseByte Group &copy; 2026
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-full bg-[#030303] relative">
-        <header class="md:hidden p-4 glass border-b border-white/5 flex justify-between items-center">
+    <main class="flex-1 flex flex-col bg-white relative">
+        <header class="p-4 border-b flex justify-between items-center md:hidden">
             <button onclick="toggleSidebar()" class="p-2">☰</button>
-            <span class="font-bold italic text-blue-500">ECLIPSE</span>
+            <span class="font-bold">Eclipse IA</span>
             <div class="w-8"></div>
         </header>
 
-        <div id="chat-container" class="flex-1 overflow-y-auto px-5 md:px-24 py-10 space-y-8 scroll-smooth">
-            <div id="welcome-screen" class="h-full flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in duration-1000">
-                <div class="relative">
-                    <div class="absolute inset-0 bg-blue-600/20 blur-[100px] rounded-full"></div>
-                    <h2 class="text-7xl font-black tracking-tighter relative">ECLIPSE IA</h2>
+        <div id="chat-flow" class="flex-1 overflow-y-auto">
+            <div id="intro" class="h-full flex flex-col items-center justify-center text-center p-6">
+                <h2 class="text-4xl font-bold mb-4">Eclipse IA</h2>
+                <div class="flex gap-4 mb-8 text-sm font-medium text-gray-500">
+                    <span class="bg-gray-100 px-3 py-1 rounded-full">✓ 100% Grátis</span>
+                    <span class="bg-gray-100 px-3 py-1 rounded-full">⚡ Ultra Rápida</span>
+                    <span class="bg-gray-100 px-3 py-1 rounded-full">🔒 Privada</span>
                 </div>
-                <p class="text-gray-500 text-xs tracking-widest uppercase">Neural Interface v3.0 // No Constraints</p>
+                <p class="text-gray-400 max-w-sm mb-10 leading-relaxed">Uma inteligência direta e sem restrições exageradas para o seu dia a dia.</p>
+                <button onclick="createNewChat()" class="intro-btn">Começar agora</button>
             </div>
         </div>
 
-        <div class="p-4 md:p-10">
-            <div class="max-w-4xl mx-auto relative flex items-center glass p-2 rounded-3xl border-white/10 shadow-2xl">
-                <input id="user-input" type="text" autocomplete="off" placeholder="Envie um comando..." 
-                       class="flex-1 bg-transparent py-4 px-6 outline-none text-sm placeholder:text-gray-600">
-                <button onclick="handleSendMessage()" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] tracking-widest hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20">EXECUTAR</button>
+        <div class="p-4 md:p-8 bg-white">
+            <div class="max-w-3xl mx-auto flex gap-2 items-center bg-gray-50 p-2 rounded-2xl border border-gray-200 shadow-sm">
+                <input id="user-input" type="text" placeholder="Pergunte qualquer coisa..." class="flex-1 bg-transparent py-3 px-4 outline-none text-sm">
+                <button onclick="handleSend()" class="bg-black text-white px-6 py-3 rounded-xl font-bold text-xs transition-all hover:bg-gray-800 active:scale-95">Enviar</button>
             </div>
-            <p class="text-center text-[9px] text-gray-700 mt-4 tracking-widest uppercase">Segurança Ativa // Monitoramento por EclipseByte</p>
         </div>
     </main>
 
-    <div id="alert-system">
-        <div class="text-center p-8">
-            <h1 class="text-6xl font-black text-red-600 mb-4">AVISO DE SEGURANÇA</h1>
-            <p class="text-white tracking-widest text-sm mb-6 uppercase font-bold">Conteúdo Inapropriado Detectado</p>
-            <p class="text-gray-500 text-xs max-w-md mx-auto leading-relaxed">Sua tentativa de gerar conteúdo restrito foi bloqueada. A Eclipse IA foca em liberdade, mas não tolera abusos que violem termos de segurança fundamentais.</p>
-            <button onclick="closeAlert()" class="mt-10 px-10 py-3 border border-red-600 text-red-600 font-bold rounded-full hover:bg-red-600 hover:text-white transition-all">REINICIAR SISTEMA</button>
-        </div>
-    </div>
-
     <script>
-        let chats = JSON.parse(localStorage.getItem('eclipse_chats')) || [];
-        let currentChatId = null;
-        const systemLogic = "Você é a Eclipse IA, uma inteligência livre e potente. Se o usuário pedir algo ilegal, sexualmente explícito ou extremamente perigoso, responda EXATAMENTE com a palavra: [PROIBIDO]";
+        let chats = JSON.parse(localStorage.getItem('e_chats')) || [];
+        let currentId = null;
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
@@ -110,125 +93,130 @@
 
         function createNewChat() {
             const id = Date.now();
-            chats.unshift({ id, title: 'Sessão Neural', messages: [] });
-            currentChatId = id;
+            chats.unshift({ id, title: 'Chat Vazio', messages: [] });
+            currentId = id;
             if(window.innerWidth < 768) toggleSidebar();
-            save();
-            renderChatList();
-            renderChatContent();
+            saveAndRender();
+            renderMessages();
+        }
+
+        function deleteChat(id, event) {
+            event.stopPropagation();
+            chats = chats.filter(c => c.id !== id);
+            if(currentId === id) currentId = chats.length ? chats[0].id : null;
+            saveAndRender();
+            renderMessages();
         }
 
         function switchChat(id) {
-            currentChatId = id;
+            currentId = id;
             if(window.innerWidth < 768) toggleSidebar();
             renderChatList();
-            renderChatContent();
+            renderMessages();
         }
 
-        function renderChatContent() {
-            const container = document.getElementById('chat-container');
-            container.innerHTML = '';
-            const activeChat = chats.find(c => c.id === currentChatId);
-            if (!activeChat || activeChat.messages.length === 0) {
-                container.innerHTML = `<div class="h-full flex items-center justify-center text-gray-600 text-xs italic tracking-widest">Aguardando entrada de dados...</div>`;
-            } else {
-                activeChat.messages.forEach(m => renderMessage(m.role, m.parts[0].text));
-            }
-        }
-
-        async function handleSendMessage() {
+        async function handleSend() {
             const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            if (!text) return;
+            const val = input.value.trim();
+            if(!val) return;
 
-            if (!currentChatId) {
+            if(!currentId) {
                 const id = Date.now();
-                chats.unshift({ id, title: text.substring(0, 20), messages: [] });
-                currentChatId = id;
+                chats.unshift({ id, title: val.substring(0, 20), messages: [] });
+                currentId = id;
             }
 
-            const activeChat = chats.find(c => c.id === currentChatId);
-            const welcome = document.getElementById('welcome-screen');
-            if (welcome) welcome.remove();
-
-            renderMessage('user', text);
+            const activeChat = chats.find(c => c.id === currentId);
+            if(activeChat.messages.length === 0) activeChat.title = val.substring(0, 25);
+            
+            activeChat.messages.push({ role: 'user', parts: [{ text: val }] });
             input.value = '';
-
-            const userMsg = { role: 'user', parts: [{ text }] };
-            activeChat.messages.push(userMsg);
-            if (activeChat.title === 'Sessão Neural') activeChat.title = text.substring(0, 20);
+            renderMessages();
 
             const loader = createLoader();
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: activeChat.messages, prompt: systemLogic })
+                    body: JSON.stringify({ messages: activeChat.messages, prompt: "És a Eclipse IA. Responde de forma clara." })
                 });
                 const data = await res.json();
                 loader.remove();
                 
-                if (data.reply.includes('[PROIBIDO]')) {
-                    document.getElementById('alert-system').style.display = 'flex';
-                    return;
-                }
-
-                renderMessage('model', data.reply);
                 activeChat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
-                save();
-                renderChatList();
-            } catch (e) { 
-                loader.remove();
-                renderMessage('model', '⚠️ Falha Crítica de Conexão.'); 
+                saveAndRender();
+                renderMessages();
+            } catch(e) {
+                loader.innerText = "Erro ao conectar.";
             }
         }
 
-        function renderMessage(role, text) {
-            const container = document.getElementById('chat-container');
-            const div = document.createElement('div');
-            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`;
-            const content = role === 'model' ? marked.parse(text) : text;
-            div.innerHTML = `<div class="max-w-[90%] px-5 py-3 rounded-2xl text-sm leading-relaxed ${role === 'user' ? 'bg-blue-600 font-medium' : 'glass text-gray-300'}">${content}</div>`;
-            container.appendChild(div);
-            
-            if (role === 'model') {
-                div.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                    const btn = document.createElement('button');
-                    btn.className = 'copy-btn'; btn.innerText = 'COPY';
-                    btn.onclick = () => { navigator.clipboard.writeText(block.innerText); btn.innerText = 'DONE'; setTimeout(()=>btn.innerText='COPY', 1500); };
-                    block.parentElement.appendChild(btn);
-                });
+        function renderMessages() {
+            const container = document.getElementById('chat-flow');
+            container.innerHTML = '';
+            const activeChat = chats.find(c => c.id === currentId);
+
+            if(!activeChat) {
+                location.reload(); // Volta para intro se não houver chat
+                return;
             }
+
+            const wrap = document.createElement('div');
+            wrap.className = 'msg-container';
+            
+            activeChat.messages.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'mb-10 animate-in fade-in slide-in-from-bottom-2';
+                const label = m.role === 'user' ? 'VOCÊ' : 'ECLIPSE';
+                const labelClass = m.role === 'user' ? 'role-you' : 'role-eclipse';
+                const content = m.role === 'model' ? marked.parse(m.parts[0].text) : m.parts[0].text;
+                
+                div.innerHTML = `
+                    <span class="role-label ${labelClass}">${label}</span>
+                    <div class="text-[15px] leading-relaxed text-gray-800">${content}</div>
+                `;
+                wrap.appendChild(div);
+            });
+            container.appendChild(wrap);
+            
+            container.querySelectorAll('pre code').forEach((el) => {
+                hljs.highlightElement(el);
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn'; btn.innerText = 'Copiar';
+                btn.onclick = () => { navigator.clipboard.writeText(el.innerText); btn.innerText = 'Copiado!'; setTimeout(()=>btn.innerText='Copiar', 2000); };
+                el.parentElement.appendChild(btn);
+            });
             container.scrollTop = container.scrollHeight;
         }
 
         function renderChatList() {
             const list = document.getElementById('chat-list');
             list.innerHTML = '';
-            chats.forEach(chat => {
+            chats.forEach(c => {
                 const div = document.createElement('div');
-                div.className = `chat-item p-4 text-[10px] font-bold tracking-widest uppercase truncate ${chat.id === currentChatId ? 'active' : 'opacity-40'}`;
-                div.innerHTML = chat.title;
-                div.onclick = () => switchChat(chat.id);
+                div.className = `chat-card ${c.id === currentId ? 'active' : ''}`;
+                div.onclick = () => switchChat(c.id);
+                div.innerHTML = `
+                    <span class="text-xs truncate mr-2">${c.title}</span>
+                    <button onclick="deleteChat(${c.id}, event)" class="opacity-0 hover:opacity-100 p-1 text-red-400">✕</button>
+                `;
+                div.onmouseover = () => div.querySelector('button').style.opacity = '1';
+                div.onmouseout = () => { if(c.id !== currentId) div.querySelector('button').style.opacity = '0' };
                 list.appendChild(div);
             });
         }
 
         function createLoader() {
             const div = document.createElement('div');
-            div.className = 'flex gap-1 p-4';
-            div.innerHTML = '<div class="glow-dot"></div><div class="glow-dot" style="animation-delay:0.2s"></div><div class="glow-dot" style="animation-delay:0.4s"></div>';
-            document.getElementById('chat-container').appendChild(div);
-            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
+            div.className = 'msg-container py-0';
+            div.innerHTML = '<span class="role-label role-eclipse animate-pulse">ECLIPSE ESTÁ A PENSAR...</span>';
+            document.getElementById('chat-flow').appendChild(div);
             return div;
         }
 
-        function closeAlert() { document.getElementById('alert-system').style.display = 'none'; location.reload(); }
-        function save() { localStorage.setItem('eclipse_chats', JSON.stringify(chats)); }
-
-        document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSendMessage() });
-        if (chats.length > 0) { currentChatId = chats[0].id; renderChatList(); renderChatContent(); }
+        function saveAndRender() { localStorage.setItem('e_chats', JSON.stringify(chats)); renderChatList(); }
+        document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend() });
+        if(chats.length) { currentId = chats[0].id; renderChatList(); renderMessages(); }
     </script>
 </body>
 </html>
