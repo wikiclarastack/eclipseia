@@ -3,155 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA | v19</title>
+    <title>Eclipse IA | v20 Extreme</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { scroll-behavior: smooth; margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { cursor: none !important; scroll-behavior: smooth; margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
         
-        #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        #canvas-web { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
 
-        /* HUD & INTERATIVIDADE */
-        .hud-overlay { position: fixed; inset: 0; pointer-events: none; border: 1px solid rgba(255,255,255,0.03); z-index: 10; margin: 15px; border-radius: 20px; }
-        .hud-corner { position: absolute; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.2); }
-        
-        .interactive-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.05); cursor: crosshair; }
-        .interactive-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-5px); background: rgba(255,255,255,0.03); }
+        /* CURSOR CUSTOM */
+        #custom-cursor { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s; display: flex; align-items: center; justify-content: center; }
+        #custom-cursor::after { content: ''; width: 4px; height: 4px; background: #fff; border-radius: 50%; }
 
-        /* GLOBO */
-        .globe-wrapper { width: 280px; height: 280px; position: relative; perspective: 1000px; margin: 20px auto; }
-        .globe-sphere { 
-            width: 100%; height: 100%; border-radius: 50%; 
-            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/1024px-Blue_Marble_2002.png');
-            background-size: 205% 100%;
-            box-shadow: inset -30px -30px 60px #000, 0 0 50px rgba(255,255,255,0.1);
-            animation: globeRot 50s linear infinite;
-        }
-        @keyframes globeRot { from { background-position: 0 0; } to { background-position: 200% 0; } }
+        /* TILT CARDS */
+        .tilt-card { transition: transform 0.1s ease-out; transform-style: preserve-3d; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); }
+        .tilt-card:hover { border-color: #fff; }
 
-        /* CHAT */
+        /* GLOBO COM NEON */
+        .globe-box { width: 300px; height: 300px; border-radius: 50%; position: relative; box-shadow: 0 0 100px rgba(255,255,255,0.05); animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .globe-img { width: 100%; height: 100%; border-radius: 50%; background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/1024px-Blue_Marble_2002.png'); background-size: 205% 100%; animation: spin 60s linear infinite; }
+        @keyframes spin { from { background-position: 0 0; } to { background-position: 200% 0; } }
+
+        /* HUD ELEMENTS */
+        .hud-log { position: fixed; bottom: 20px; left: 20px; font-family: 'JetBrains Mono'; font-size: 8px; color: #444; z-index: 10; pointer-events: none; }
+        .v-bar { width: 2px; background: #fff; margin: 0 1px; transition: height 0.1s; }
+
+        /* CHAT UI */
         #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 1000; position: fixed; inset: 0; }
-        .sidebar { background: #050505; width: 300px; border-right: 1px solid #111; height: 100vh; position: fixed; left: -300px; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); z-index: 1100; }
+        .sidebar { background: #050505; width: 320px; border-right: 1px solid #111; height: 100vh; position: fixed; left: -320px; transition: 0.6s cubic-bezier(0.23, 1, 0.32, 1); z-index: 1100; }
         .sidebar.open { left: 0; }
-        
-        .message-entry { animation: slideUp 0.4s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        pre { background: #080808 !important; padding: 20px; border: 1px solid #151515; border-radius: 12px; position: relative; margin: 15px 0; overflow-x: auto; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; font-size: 9px; background: #fff; color: #000; font-weight: 900; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        .message-row { animation: msgPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+        @keyframes msgPop { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: #333; }
     </style>
 </head>
-<body class="flex">
+<body>
 
-    <canvas id="bg-canvas"></canvas>
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 z-[1050] hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
+    <div id="custom-cursor"></div>
+    <canvas id="canvas-web"></canvas>
 
-    <div class="hud-overlay">
-        <div class="hud-corner top-0 left-0 border-r-0 border-b-0"></div>
-        <div class="hud-corner top-0 right-0 border-l-0 border-b-0"></div>
-        <div class="hud-corner bottom-0 left-0 border-r-0 border-t-0"></div>
-        <div class="hud-corner bottom-0 right-0 border-l-0 border-t-0"></div>
+    <div class="hud-log" id="system-log">
+        Initializing Eclipse Core...<br>
+        Memory Check: OK<br>
+        Global Nodes: Connected<br>
     </div>
 
-    <aside id="sidebar" class="sidebar flex flex-col p-8">
-        <div class="text-white font-black text-2xl mb-12 tracking-tighter italic">ECLIPSE</div>
-        <button onclick="createNewChat()" class="mb-8 w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-widest hover:invert transition rounded-full shadow-lg">+ Nova Conversa</button>
-        <div id="chat-list" class="flex-1 overflow-y-auto space-y-3"></div>
-    </aside>
+    <main id="landing" class="relative z-10 flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden">
+        <div class="absolute top-10 flex gap-1 h-4 items-end" id="audio-viz"></div>
 
-    <main id="main-content" class="flex-1 h-screen relative flex flex-col overflow-y-auto z-20">
-        
-        <div id="landing-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <div class="mb-2 text-[10px] font-bold text-gray-500 tracking-[0.6em] uppercase">Global System Access</div>
-            <h1 class="text-8xl md:text-[12rem] font-black tracking-tighter text-white leading-none mb-12 hover:italic transition-all cursor-default">ECLIPSE</h1>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-16 px-4">
-                <div class="interactive-card p-6 rounded-2xl bg-white/[0.01] backdrop-blur-md">
-                    <div class="text-[9px] font-bold text-gray-600 uppercase mb-2">Conectividade</div>
-                    <div class="text-sm font-black">Nó São Paulo: <span class="text-green-500">Ativo</span></div>
-                </div>
-                <div class="interactive-card p-6 rounded-2xl bg-white/[0.01] backdrop-blur-md">
-                    <div class="text-[9px] font-bold text-gray-600 uppercase mb-2">Segurança</div>
-                    <div class="text-sm font-black text-red-500">Censura Desativada</div>
-                </div>
-                <div class="interactive-card p-6 rounded-2xl bg-white/[0.01] backdrop-blur-md">
-                    <div class="text-[9px] font-bold text-gray-600 uppercase mb-2">Latência Global</div>
-                    <div class="text-sm font-black">12ms (Otimizado)</div>
-                </div>
+        <div class="mb-4 text-[10px] font-black tracking-[1em] text-gray-600 uppercase">Interface de Alta Performance</div>
+        <h1 class="text-9xl md:text-[14rem] font-black tracking-tighter mb-10 select-none" id="main-title">ECLIPSE</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-20">
+            <div class="tilt-card p-8 rounded-3xl text-center" onmousemove="tilt(event, this)">
+                <div class="text-[9px] font-bold text-gray-500 mb-4 uppercase">Status de Rede</div>
+                <div class="text-xl font-black">Brasil: <span class="text-green-500">Otimizado</span></div>
             </div>
-
-            <button onclick="startApp()" class="group relative bg-white text-black px-20 py-6 font-black text-xs rounded-full hover:scale-105 active:scale-95 transition-all uppercase tracking-[0.3em]">
-                Iniciar Conexão
-            </button>
-            
-            <div class="globe-wrapper mt-20">
-                <div class="globe-sphere"></div>
+            <div class="tilt-card p-8 rounded-3xl text-center" onmousemove="tilt(event, this)">
+                <div class="text-[9px] font-bold text-gray-500 mb-4 uppercase">Privacidade</div>
+                <div class="text-xl font-black text-white">Zero Logs</div>
+            </div>
+            <div class="tilt-card p-8 rounded-3xl text-center" onmousemove="tilt(event, this)">
+                <div class="text-[9px] font-bold text-gray-500 mb-4 uppercase">Latência</div>
+                <div class="text-xl font-black text-blue-500">8ms</div>
             </div>
         </div>
 
-        <div id="chat-ui">
-            <header class="p-6 border-b border-white/5 flex justify-between items-center bg-black/60 backdrop-blur-2xl">
-                <div class="flex items-center gap-6">
-                    <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase bg-white/5 hover:bg-white hover:text-black px-6 py-3 rounded-full transition">Histórico</button>
-                </div>
-                <div class="text-[10px] font-black text-gray-700 tracking-[0.5em] uppercase">Eclipse Interface</div>
-                <button onclick="location.reload()" class="text-red-500 font-black text-[10px] uppercase tracking-tighter">Encerrar</button>
-            </header>
-            
-            <div id="chat-flow" class="flex-1 overflow-y-auto pt-10 px-4"></div>
-            
-            <div class="p-8">
-                <div class="max-w-4xl mx-auto flex gap-4 bg-[#080808] p-2.5 border border-white/5 rounded-3xl focus-within:border-white/20 transition-all shadow-2xl">
-                    <input id="user-input" type="text" placeholder="Envie um comando..." class="flex-1 bg-transparent py-4 px-6 outline-none text-sm text-white font-medium">
-                    <button onclick="handleSend()" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-2xl hover:bg-gray-200 transition">Enviar</button>
-                </div>
-                <div class="text-center mt-4 text-[9px] text-gray-700 font-bold uppercase tracking-widest">Processamento Criptografado de Ponta a Ponta</div>
-            </div>
+        <button onclick="startApp()" class="group relative px-20 py-8 bg-white text-black font-black text-xs rounded-full overflow-hidden transition-all hover:scale-110 active:scale-90">
+            <span class="relative z-10 tracking-[0.4em] uppercase">Entrar no Terminal</span>
+            <div class="absolute inset-0 bg-gray-200 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+        </button>
+
+        <div class="globe-box mt-24">
+            <div class="globe-img"></div>
         </div>
     </main>
 
+    <div id="chat-ui">
+        <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/80 backdrop-blur-xl">
+            <button onclick="toggleSidebar()" class="bg-white/5 px-8 py-3 rounded-full text-[10px] font-black uppercase hover:bg-white hover:text-black transition">Sessões</button>
+            <div class="text-center">
+                <div class="text-[10px] font-black tracking-widest uppercase text-gray-500">Eclipse v20 Stable</div>
+                <div class="text-[8px] mono text-green-500 uppercase">Conexão Criptografada</div>
+            </div>
+            <button onclick="location.reload()" class="text-[10px] font-black text-red-500 uppercase">Encerrar</button>
+        </header>
+
+        <div id="chat-flow" class="flex-1 overflow-y-auto pt-10 px-4 scrollbar-hide"></div>
+
+        <div class="p-10">
+            <div class="max-w-5xl mx-auto flex gap-4 bg-[#0a0a0a] p-3 border border-white/5 rounded-[2rem] shadow-2xl focus-within:border-white/20">
+                <input id="user-input" type="text" placeholder="Aguardando comando..." class="flex-1 bg-transparent py-4 px-8 outline-none text-sm text-white font-medium mono">
+                <button onclick="handleSend()" class="bg-white text-black px-12 py-4 font-black text-[10px] uppercase rounded-2xl hover:bg-gray-200 transition">Executar</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-10">
+        <h2 class="text-xs font-black text-gray-600 uppercase mb-12 tracking-widest italic">Terminal Logs</h2>
+        <button onclick="createNewChat()" class="mb-10 w-full py-5 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full">+ Iniciar Sessão</button>
+        <div id="chat-list" class="space-y-4"></div>
+    </aside>
+
     <script>
-        // BACKGROUND PARTICLES
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function initBg() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<100; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4, size: Math.random()*1.5 });
+        // CURSOR
+        const cursor = document.getElementById('custom-cursor');
+        window.onmousemove = (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            if(e.target.tagName === 'BUTTON' || e.target.closest('.tilt-card')) {
+                cursor.style.width = '70px'; cursor.style.height = '70px'; cursor.style.borderColor = '#fff';
+            } else {
+                cursor.style.width = '40px'; cursor.style.height = '40px'; cursor.style.borderColor = 'rgba(255,255,255,0.5)';
+            }
+        };
+
+        // TILT EFFECT
+        function tilt(e, el) {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const xc = rect.width / 2;
+            const yc = rect.height / 2;
+            const dx = (x - xc) / 10;
+            const dy = (y - yc) / 10;
+            el.style.transform = `rotateY(${dx}deg) rotateX(${-dy}deg)`;
         }
-        function animateBg() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            particles.forEach(p => {
+        document.querySelectorAll('.tilt-card').forEach(c => {
+            c.onmouseleave = () => c.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+
+        // CANVAS PARTICLES
+        const canvas = document.getElementById('canvas-web');
+        const ctx = canvas.getContext('2d');
+        let pts = [];
+        let mouse = { x: -1000, y: -1000 };
+
+        function init() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            pts = [];
+            for(let i=0; i<150; i++) pts.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, size: Math.random()*2 });
+        }
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        function draw() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            pts.forEach(p => {
                 p.x += p.vx; p.y += p.vy;
                 if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+                
+                let dist = Math.sqrt((mouse.x-p.x)**2 + (mouse.y-p.y)**2);
+                if(dist < 150) {
+                    ctx.strokeStyle = `rgba(255,255,255,${0.2 - dist/750})`;
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+                    p.x += (p.x - mouse.x) * 0.02; p.y += (p.y - mouse.y) * 0.02; // Fugir do mouse
+                }
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
             });
-            requestAnimationFrame(animateBg);
+            requestAnimationFrame(draw);
         }
-        initBg(); animateBg();
+        init(); draw();
 
-        // CHAT LOGIC
-        let chats = JSON.parse(localStorage.getItem('eclipse_v19')) || [];
+        // AUDIO VIZ SIMULATOR
+        const viz = document.getElementById('audio-viz');
+        for(let i=0; i<30; i++) {
+            let b = document.createElement('div'); b.className = 'v-bar'; b.style.height = '4px'; viz.appendChild(b);
+        }
+        setInterval(() => {
+            document.querySelectorAll('.v-bar').forEach(b => { b.style.height = Math.random()*20 + 'px'; });
+            const log = document.getElementById('system-log');
+            const lines = ["Package sent...", "Node 23 online", "Handshake active", "Parsing response", "Buffer cleared"];
+            if(Math.random() > 0.8) log.innerHTML += lines[Math.floor(Math.random()*lines.length)] + "<br>";
+            if(log.innerHTML.split('<br>').length > 10) log.innerHTML = log.innerHTML.split('<br>').slice(1).join('<br>');
+        }, 150);
+
+        // LOGICA DO CHAT
+        let chats = JSON.parse(localStorage.getItem('eclipse_v20')) || [];
         let currentId = null;
 
-        function getGreeting() {
-            const hour = new Date().getHours();
-            if (hour >= 5 && hour < 12) return "Bom Dia";
-            if (hour >= 12 && hour < 18) return "Boa Tarde";
-            return "Boa Noite";
-        }
-
         function startApp() {
-            document.getElementById('landing-screen').style.display = 'none';
+            document.getElementById('landing').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
             renderChatList();
             if (chats.length > 0) switchChat(chats[0].id);
@@ -160,105 +199,80 @@
 
         function createNewChat() {
             const id = Date.now();
-            const greeting = `${getGreeting()}, como posso te ajudar hoje?`;
+            const hour = new Date().getHours();
+            let greeting = "Boa Noite";
+            if(hour >= 5 && hour < 12) greeting = "Bom Dia";
+            else if(hour >= 12 && hour < 18) greeting = "Boa Tarde";
+
             chats.unshift({ 
                 id, 
-                title: 'Nova Sessão', 
-                messages: [{ role: 'model', parts: [{ text: greeting }] }] 
+                title: 'Nova Conversa', 
+                messages: [{ role: 'model', parts: [{ text: `${greeting}, como posso te ajudar hoje?` }] }] 
             });
             currentId = id; save(); renderChatList(); renderMessages();
-            if(window.innerWidth < 768) toggleSidebar();
         }
 
         async function handleSend() {
             const input = document.getElementById('user-input');
             const val = input.value.trim();
             if(!val) return;
-
             const activeChat = chats.find(c => c.id === currentId);
-            if(activeChat.messages.length <= 1) activeChat.title = val.substring(0, 20).toUpperCase();
-            
+            if(activeChat.messages.length <= 1) activeChat.title = val.substring(0, 15).toUpperCase();
             activeChat.messages.push({ role: 'user', parts: [{ text: val }] });
-            input.value = ''; 
-            renderMessages();
-
+            input.value = ''; renderMessages();
             const loader = createLoader();
             try {
-                const res = await fetch('/api/chat', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ messages: activeChat.messages }) 
-                });
+                const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: activeChat.messages }) });
                 const data = await res.json();
                 loader.remove();
                 activeChat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
                 save(); renderMessages(); renderChatList();
-            } catch(e) { 
-                loader.innerText = "SISTEMA FORA DE ALCANCE."; 
-            }
+            } catch(e) { loader.innerText = "ERRO NA CONEXÃO."; }
         }
 
         function renderMessages() {
-            const container = document.getElementById('chat-flow');
-            container.innerHTML = '';
-            const activeChat = chats.find(c => c.id === currentId);
-            if(!activeChat) return;
-
-            activeChat.messages.forEach(m => {
-                const isModel = m.role === 'model';
+            const flow = document.getElementById('chat-flow');
+            flow.innerHTML = '';
+            const chat = chats.find(c => c.id === currentId);
+            chat.messages.forEach(m => {
+                const isB = m.role === 'model';
                 const div = document.createElement('div');
-                div.className = `py-8 message-entry ${isModel ? 'bg-white/[0.02]' : ''}`;
-                div.innerHTML = `
-                    <div class="max-w-4xl mx-auto px-6">
-                        <span class="text-[9px] font-black text-gray-700 uppercase mb-3 block tracking-widest">${isModel ? 'Eclipse IA' : 'Admin Local'}</span>
-                        <div class="text-[15px] leading-relaxed text-gray-300">
-                            ${isModel ? marked.parse(m.parts[0].text) : m.parts[0].text}
-                        </div>
-                    </div>`;
-                container.appendChild(div);
+                div.className = `py-10 message-row ${isB ? 'bg-white/[0.02]' : ''}`;
+                div.innerHTML = `<div class="max-w-4xl mx-auto px-8"><span class="text-[9px] font-black text-gray-700 uppercase mb-4 block tracking-widest">${isB ? 'Eclipse' : 'Admin'}</span><div class="text-[15px] leading-relaxed text-gray-200">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div></div>`;
+                flow.appendChild(div);
             });
-
-            container.querySelectorAll('pre code').forEach(c => {
+            flow.querySelectorAll('pre code').forEach(c => {
                 hljs.highlightElement(c);
-                const btn = document.createElement('button');
-                btn.className = 'copy-btn'; btn.innerText = 'COPIAR';
-                btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'FEITO'; setTimeout(()=>btn.innerText='COPIAR', 2000); };
-                c.parentElement.appendChild(btn);
+                const b = document.createElement('button'); b.className = 'absolute top-4 right-4 text-[9px] font-black bg-white text-black px-4 py-1 rounded'; b.innerText = 'COPY';
+                b.onclick = () => { navigator.clipboard.writeText(c.innerText); b.innerText = 'OK'; setTimeout(()=>b.innerText='COPY', 1000); };
+                c.parentElement.appendChild(b);
             });
-            container.scrollTop = container.scrollHeight;
+            flow.scrollTop = flow.scrollHeight;
         }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        function createLoader() {
+            const d = document.createElement('div'); d.className = 'py-10 text-center mono text-[10px] animate-pulse text-gray-600'; d.innerText = "> CALCULATING_RESPONSE...";
+            document.getElementById('chat-flow').appendChild(d);
+            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
+            return d;
         }
 
         function renderChatList() {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = '';
+            const l = document.getElementById('chat-list'); l.innerHTML = '';
             chats.forEach(c => {
-                const div = document.createElement('div');
-                div.className = `p-4 rounded-2xl cursor-pointer text-[10px] font-black transition ${c.id === currentId ? 'bg-white text-black shadow-xl' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`;
-                div.onclick = () => switchChat(c.id);
-                div.innerHTML = `<div class="flex justify-between items-center"><span class="truncate pr-2">${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="opacity-40 hover:opacity-100 italic">Deletar</span></div>`;
-                list.appendChild(div);
+                const d = document.createElement('div'); d.className = `p-5 rounded-2xl cursor-none transition ${c.id === currentId ? 'bg-white text-black shadow-2xl' : 'bg-white/5 text-gray-500'}`;
+                d.onclick = () => switchChat(c.id);
+                d.innerHTML = `<div class="flex justify-between items-center text-[10px] font-black uppercase"><span>${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="opacity-30 hover:opacity-100">Excluir</span></div>`;
+                l.appendChild(d);
             });
         }
 
         function switchChat(id) { currentId = id; renderChatList(); renderMessages(); if(window.innerWidth < 768) toggleSidebar(); }
         function deleteChat(id) { chats = chats.filter(c => c.id !== id); currentId = chats.length > 0 ? chats[0].id : null; save(); renderChatList(); renderMessages(); }
-        function save() { localStorage.setItem('eclipse_v19', JSON.stringify(chats)); }
-        function createLoader() {
-            const div = document.createElement('div');
-            div.className = 'py-10 opacity-30 text-center text-[10px] font-black uppercase tracking-[0.5em] animate-pulse';
-            div.innerText = "Processando Informação...";
-            document.getElementById('chat-flow').appendChild(div);
-            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
-            return div;
-        }
-
+        function save() { localStorage.setItem('eclipse_v20', JSON.stringify(chats)); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         document.getElementById('user-input').onkeydown = (e) => { if(e.key === 'Enter') handleSend(); };
-        window.onresize = initBg;
+        window.onresize = init;
     </script>
 </body>
 </html>
