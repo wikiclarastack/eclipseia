@@ -7,269 +7,223 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
         * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; outline: none !important; }
-        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; }
+        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .btn-primary { background: #fff; color: #000; font-weight: 700; transition: 0.2s; }
-        .btn-primary:active { transform: scale(0.98); }
         #notification-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 12px 24px; border-radius: 16px; font-size: 13px; font-weight: 600; animation: toastIn 0.3s ease forwards; }
         @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .badge-dm { background: #fff; color: #000; font-size: 8px; padding: 2px 5px; border-radius: 4px; font-weight: 900; text-transform: uppercase; }
     </style>
 </head>
-<body class="flex items-center justify-center">
+<body>
 
     <div id="notification-container"></div>
 
     <section id="auth-screen" class="w-full max-w-md p-8 glass rounded-[2.5rem] hidden">
-        <h1 class="text-5xl font-extrabold tracking-tighter mb-8 text-center">Eclipse</h1>
-        <div id="login-form" class="space-y-4">
-            <input id="login-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl glass">
-            <input id="login-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl glass">
-            <button onclick="handleLogin()" class="btn-primary w-full p-4 rounded-2xl font-black uppercase text-[10px]">Entrar</button>
-            <p class="text-center text-xs text-gray-500 mt-6">Novo aqui? <button onclick="toggleAuth(false)" class="text-white font-bold">Criar conta</button></p>
-        </div>
-        <div id="register-form" class="hidden space-y-4">
-            <input id="reg-name" type="text" placeholder="Nome completo" class="w-full p-4 rounded-2xl glass">
-            <input id="reg-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl glass">
-            <input id="reg-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl glass">
-            <button onclick="handleSignup()" class="btn-primary w-full p-4 rounded-2xl font-black uppercase text-[10px]">Registrar</button>
-            <p class="text-center text-xs text-gray-500 mt-6">Já tem conta? <button onclick="toggleAuth(true)" class="text-white font-bold">Login</button></p>
+        <h1 class="text-5xl font-extrabold tracking-tighter mb-8 text-center italic">Eclipse</h1>
+        <div class="space-y-4">
+            <input id="login-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl glass border-none">
+            <input id="login-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl glass border-none">
+            <button onclick="handleLogin()" class="btn-primary w-full p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest">Entrar na Rede</button>
+            <button onclick="handleSignup()" class="w-full p-4 rounded-2xl glass font-bold text-[10px] uppercase tracking-widest">Registrar Novo</button>
         </div>
     </section>
 
-    <main id="app-main" class="hidden fixed inset-0 flex flex-col md:flex-row bg-[#050505]">
-        <aside class="w-full md:w-80 h-full glass flex flex-col z-50">
+    <main id="app-main" class="hidden fixed inset-0 flex flex-col md:flex-row bg-[#020202]">
+        <aside class="w-full md:w-80 h-full glass flex flex-col z-50 border-r border-white/5">
             <div class="p-8 flex justify-between items-center">
                 <h2 class="text-2xl font-black italic tracking-tighter">Eclipse</h2>
-                <div class="flex gap-2">
-                    <button onclick="openSocial()" class="p-2 glass rounded-xl hover:bg-white/10">👥</button>
-                </div>
+                <button onclick="openSocial()" class="p-2 glass rounded-xl hover:bg-white/10 transition">👥</button>
             </div>
+            
             <div class="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar" id="chat-list"></div>
+
             <div class="p-6 border-t border-white/5" onclick="openSettings()">
                 <div class="flex items-center gap-4 hover:bg-white/5 p-3 rounded-2xl cursor-pointer transition">
-                    <img id="user-avatar-ui" class="w-11 h-11 rounded-full border border-white/10 object-cover bg-zinc-900">
+                    <img id="user-avatar-ui" class="w-11 h-11 rounded-full border border-white/10 object-cover bg-zinc-900 shadow-2xl">
                     <div class="flex-1 overflow-hidden">
                         <p id="user-name-ui" class="text-sm font-bold truncate">...</p>
-                        <p class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Meu Perfil</p>
+                        <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Online</p>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <section class="flex-1 flex flex-col">
+        <section class="flex-1 flex flex-col relative">
             <div id="chat-flow" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 no-scrollbar"></div>
+            
             <div class="p-6 md:p-12">
                 <div class="max-w-4xl mx-auto flex gap-3 glass p-2 rounded-[2.5rem]">
-                    <input id="user-input" type="text" onkeydown="if(event.key==='Enter') handleSend()" placeholder="Aguardando comando..." class="flex-1 bg-transparent py-4 px-6 text-sm">
-                    <button onclick="handleSend()" class="btn-primary px-10 py-4 rounded-full text-[10px] font-black uppercase">Enviar</button>
+                    <input id="user-input" type="text" onkeydown="if(event.key==='Enter') handleSend()" placeholder="Comando de sistema..." class="flex-1 bg-transparent py-4 px-6 text-sm border-none focus:ring-0">
+                    <button onclick="handleSend()" class="btn-primary px-10 py-4 rounded-full text-[10px] font-black uppercase tracking-widest">Enviar</button>
                 </div>
             </div>
         </section>
 
-        <section id="social-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <div class="w-full max-w-md glass rounded-[3rem] p-8 flex flex-col h-[550px]">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-black">Social</h3>
-                    <button onclick="closeSocial()" class="text-gray-500 hover:text-white">✕</button>
+        <section id="social-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+            <div class="w-full max-w-md glass rounded-[3rem] p-10 flex flex-col h-[550px]">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-2xl font-black tracking-tighter italic">Social Engine</h3>
+                    <button onclick="closeSocial()" class="text-gray-500 hover:text-white transition">✕</button>
                 </div>
                 <div class="flex gap-2 mb-6">
-                    <input id="search-input" type="text" placeholder="E-mail do usuário..." class="flex-1 p-4 rounded-2xl glass text-sm">
-                    <button onclick="searchUser()" class="btn-primary px-6 rounded-2xl text-[9px] font-black">BUSCAR</button>
+                    <input id="search-input" type="text" placeholder="E-mail do usuário..." class="flex-1 p-4 rounded-2xl glass text-sm border-none">
+                    <button onclick="searchUser()" class="btn-primary px-6 rounded-2xl text-[9px] font-black uppercase">Buscar</button>
                 </div>
-                <div id="social-content" class="flex-1 overflow-y-auto space-y-3 no-scrollbar">
-                    </div>
-            </div>
-        </section>
-
-        <section id="settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-            <div class="w-full max-w-sm glass rounded-[3rem] p-8 text-center">
-                <div class="relative w-24 h-24 mx-auto mb-6 group cursor-pointer" onclick="document.getElementById('avatar-upload').click()">
-                    <img id="settings-preview" class="w-24 h-24 rounded-full object-cover border-2 border-white/10 bg-zinc-900">
-                    <input type="file" id="avatar-upload" class="hidden" onchange="previewFile()">
-                    <div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full transition text-[9px] font-bold">MUDAR</div>
-                </div>
-                <input id="set-name" type="text" placeholder="Nome" class="w-full p-4 rounded-2xl glass text-sm mb-4">
-                <button onclick="saveProfile()" class="btn-primary w-full py-4 rounded-2xl font-black uppercase text-[10px]">Atualizar</button>
-                <button onclick="logout()" class="block w-full mt-6 text-red-500 text-[9px] font-black uppercase">Sair</button>
+                <div id="social-content" class="flex-1 overflow-y-auto space-y-3 no-scrollbar"></div>
             </div>
         </section>
     </main>
 
     <script>
-        // INICIALIZAÇÃO DINÂMICA: USA O QUE TIVER NO WINDOW (INJETADO PELO VERCEL/ENV)
-        // Se as variáveis estiverem no Vercel, o Firebase lê daqui:
-        const firebaseConfig = {
-            apiKey: window.FIREBASE_API_KEY || "",
-            authDomain: window.FIREBASE_AUTH_DOMAIN || "",
-            projectId: window.FIREBASE_PROJECT_ID || "",
-            storageBucket: window.FIREBASE_STORAGE_BUCKET || "",
-            messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || "",
-            appId: window.FIREBASE_APP_ID || ""
+        const getSafeEnv = (key) => window[key] || localStorage.getItem(key);
+
+        const config = {
+            apiKey: getSafeEnv('FIREBASE_API_KEY'),
+            authDomain: "fkaa-2e852.firebaseapp.com",
+            projectId: "fkaa-2e852",
+            storageBucket: "fkaa-2e852.firebasestorage.app",
+            messagingSenderId: "258882319543",
+            appId: "1:258882319543:web:d665c1adbc4a1479afc932"
         };
 
-        if (firebaseConfig.apiKey) {
-            firebase.initializeApp(firebaseConfig);
-            var db = firebase.firestore();
-            var auth = firebase.auth();
-        }
-
+        let db, auth;
         let chats = [];
         let currentId = null;
-        let base64Avatar = "";
 
         function notify(msg, type='success') {
-            const container = document.getElementById('notification-container');
-            const div = document.createElement('div');
-            div.className = `toast ${type === 'success' ? 'bg-white text-black' : 'bg-red-500 text-white'}`;
-            div.innerText = msg;
-            container.appendChild(div);
-            setTimeout(() => div.remove(), 3000);
+            const c = document.getElementById('notification-container');
+            const d = document.createElement('div');
+            d.className = `toast ${type==='success'?'bg-white text-black':'bg-red-500 text-white'}`;
+            d.innerText = msg;
+            c.appendChild(d);
+            setTimeout(() => d.remove(), 3000);
+        }
+
+        if (config.apiKey) {
+            firebase.initializeApp(config);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            
+            auth.onAuthStateChanged(user => {
+                if(user) {
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('app-main').classList.remove('hidden');
+                    document.getElementById('user-name-ui').innerText = user.displayName || "Membro";
+                    document.getElementById('user-avatar-ui').src = user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.uid}`;
+                    loadAppData();
+                } else {
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                    document.getElementById('app-main').classList.add('hidden');
+                }
+            });
+        } else {
+            document.body.innerHTML = `<div class="p-10 text-center glass rounded-3xl"><h1 class="text-xl font-bold mb-4">Acesso Negado</h1><p class="text-sm opacity-50">Injete a API Key via terminal para prosseguir.</p></div>`;
         }
 
         async function handleLogin() {
             const e = document.getElementById('login-email').value;
             const p = document.getElementById('login-pass').value;
-            try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { notify("Falha na conexão.", "error"); }
+            try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { notify("Falha na autenticação.", "error"); }
         }
 
         async function handleSignup() {
-            const n = document.getElementById('reg-name').value;
-            const e = document.getElementById('reg-email').value;
-            const p = document.getElementById('reg-pass').value;
-            try {
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            try { 
                 const res = await auth.createUserWithEmailAndPassword(e, p);
+                const n = e.split('@')[0];
                 await res.user.updateProfile({ displayName: n });
                 await db.collection('users').doc(res.user.uid).set({ name: n, email: e, photo: "" });
             } catch(err) { notify(err.message, "error"); }
         }
 
-        // SOCIAL: BUSCA, AMIZADE E DM
         async function searchUser() {
             const email = document.getElementById('search-input').value;
             const snap = await db.collection('users').where('email', '==', email).get();
             const container = document.getElementById('social-content');
             container.innerHTML = '';
             
-            if(snap.empty) return notify("Usuário não encontrado.", "error");
+            if(snap.empty) return notify("Nenhum usuário ativo.", "error");
 
             snap.forEach(doc => {
                 if(doc.id === auth.currentUser.uid) return;
                 const u = doc.data();
                 const d = document.createElement('div');
-                d.className = "glass p-4 rounded-2xl flex justify-between items-center";
+                d.className = "glass p-5 rounded-[2rem] flex justify-between items-center border border-white/5";
                 d.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <img src="${u.photo || 'https://api.dicebear.com/7.x/shapes/svg?seed='+u.email}" class="w-10 h-10 rounded-full bg-zinc-800">
-                        <div>
-                            <p class="text-sm font-bold">${u.name}</p>
-                        </div>
+                    <div class="flex items-center gap-4">
+                        <img src="${u.photo || 'https://api.dicebear.com/7.x/shapes/svg?seed='+u.email}" class="w-10 h-10 rounded-full">
+                        <p class="text-sm font-bold">${u.name}</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="sendFriendRequest('${doc.id}', '${u.name}')" class="p-2 glass rounded-lg text-[10px]">➕</button>
-                        <button onclick="startDM('${doc.id}', '${u.name}')" class="btn-primary px-3 py-2 rounded-lg text-[8px] font-black uppercase">Chat</button>
-                    </div>
+                    <button onclick="startDM('${doc.id}', '${u.name}')" class="btn-primary px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider">DM</button>
                 `;
                 container.appendChild(d);
             });
         }
 
-        async function sendFriendRequest(targetId, targetName) {
-            notify(`Pedido enviado para ${targetName}`);
-            // Lógica de gravação no Firestore para notificações futuras
-        }
-
         function startDM(id, name) {
             const dmId = `dm_${id}`;
             if(!chats.find(c => c.id === dmId)) {
-                chats.unshift({ id: dmId, title: name, type: 'DM', messages: [{role:'model', parts:[{text: `Iniciando chat privado com ${name}.`}]}] });
+                chats.unshift({ id: dmId, title: name, type: 'DM', messages: [{role:'model', parts:[{text: `Criptografia de ponta a ponta ativada com ${name}.`}]}] });
             }
             currentId = dmId;
             closeSocial(); renderList(); renderMsgs();
         }
 
-        // CHAT ENGINE
         function handleSend() {
-            const input = document.getElementById('user-input');
-            const val = input.value.trim();
-            if(!val) return;
+            const i = document.getElementById('user-input');
+            const v = i.value.trim();
+            if(!v) return;
             const chat = chats.find(c => c.id === currentId);
-            chat.messages.push({ role: 'user', parts: [{ text: val }] });
-            input.value = ''; renderMsgs();
+            chat.messages.push({ role: 'user', parts: [{ text: v }] });
+            i.value = ''; renderMsgs();
             setTimeout(() => {
-                chat.messages.push({ role: 'model', parts: [{ text: "Eclipse v17: Processamento concluído." }] });
+                chat.messages.push({ role: 'model', parts: [{ text: "Processamento concluído. Código injetado no terminal local." }] });
                 renderMsgs();
-                localStorage.setItem('eclipse_data', JSON.stringify(chats));
-            }, 800);
+                localStorage.setItem('eclipse_v30', JSON.stringify(chats));
+            }, 700);
         }
 
         function renderMsgs() {
-            const flow = document.getElementById('chat-flow'); flow.innerHTML = '';
+            const f = document.getElementById('chat-flow'); f.innerHTML = '';
             const active = chats.find(c => c.id === currentId);
+            if(!active) return;
             active.messages.forEach(m => {
                 const isB = m.role === 'model';
                 const d = document.createElement('div');
-                d.className = `flex ${isB ? 'justify-start' : 'justify-end'}`;
-                d.innerHTML = `<div class="max-w-[80%] ${isB ? 'glass p-6' : 'bg-white text-black p-4'} rounded-3xl text-sm">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>`;
-                flow.appendChild(d);
+                d.className = `flex ${isB ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
+                d.innerHTML = `<div class="max-w-[80%] ${isB ? 'glass p-6' : 'bg-white text-black p-4 px-6'} rounded-[2.2rem] text-sm leading-relaxed">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>`;
+                f.appendChild(d);
             });
-            flow.scrollTop = flow.scrollHeight;
+            f.scrollTop = f.scrollHeight;
         }
 
         function renderList() {
             const l = document.getElementById('chat-list'); l.innerHTML = '';
             chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `p-4 px-6 rounded-2xl cursor-pointer text-sm transition ${c.id === currentId ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:text-white/5'}`;
+                d.className = `p-4 px-6 rounded-2xl cursor-pointer text-sm transition flex justify-between items-center ${c.id === currentId ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:bg-white/5'}`;
                 d.onclick = () => { currentId = c.id; renderList(); renderMsgs(); };
-                d.innerHTML = `${c.title} ${c.type === 'DM' ? '• DM' : ''}`;
+                d.innerHTML = `<span>${c.title}</span> ${c.type==='DM'?'<span class="badge-dm">DM</span>':''}`;
                 l.appendChild(d);
             });
         }
 
-        // PERFIL
-        function previewFile() {
-            const f = document.getElementById('avatar-upload').files[0];
-            const r = new FileReader();
-            r.onloadend = () => { base64Avatar = r.result; document.getElementById('settings-preview').src = r.result; };
-            if(f) r.readAsDataURL(f);
+        function loadAppData() {
+            chats = JSON.parse(localStorage.getItem('eclipse_v30')) || [{id:'global', title:'Eclipse Global', type:'public', messages:[]}];
+            currentId = chats[0].id;
+            renderList(); renderMsgs();
         }
 
-        async function saveProfile() {
-            const u = auth.currentUser;
-            const n = document.getElementById('set-name').value;
-            try {
-                await u.updateProfile({ displayName: n, photoURL: base64Avatar || u.photoURL });
-                await db.collection('users').doc(u.uid).update({ name: n, photo: base64Avatar || u.photoURL });
-                location.reload();
-            } catch(e) { notify("Erro ao salvar.", "error"); }
-        }
-
-        // INIT
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('app-main').classList.remove('hidden');
-                document.getElementById('user-name-ui').innerText = user.displayName;
-                document.getElementById('user-avatar-ui').src = user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.uid}`;
-                chats = JSON.parse(localStorage.getItem('eclipse_data')) || [{id:'main', title:'Eclipse Global', messages:[]}];
-                currentId = chats[0].id;
-                renderList(); renderMsgs();
-            } else {
-                document.getElementById('auth-screen').classList.remove('hidden');
-            }
-        });
-
-        function toggleAuth(l) { document.getElementById('login-form').classList.toggle('hidden', !l); document.getElementById('register-form').classList.toggle('hidden', l); }
-        function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); document.getElementById('set-name').value = auth.currentUser.displayName; }
         function openSocial() { document.getElementById('social-modal').classList.remove('hidden'); }
         function closeSocial() { document.getElementById('social-modal').classList.add('hidden'); }
         function logout() { auth.signOut(); location.reload(); }
