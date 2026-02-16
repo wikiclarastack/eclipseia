@@ -7,69 +7,54 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        :root { --bg: #0a0a0a; --side: #111111; --text: #f0f0f0; --accent: #ffffff; }
+        :root { --bg: #0a0a0a; --side: #111111; --text: #f0f0f0; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; display: flex; }
+        .intro-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sidebar { width: 280px; background: var(--side); border-right: 1px solid rgba(255,255,255,0.05); height: 100vh; display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-ui { flex-grow: 1; height: 100vh; display: flex; flex-direction: column; width: 100%; position: relative; }
+        .chat-scroll { flex-grow: 1; overflow-y: auto; padding: 40px 20px; }
+        .msg-container { max-width: 800px; margin: 0 auto; width: 100%; }
+        .message-entry { margin-bottom: 50px; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .intro-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Box de Código Corrigida */
+        pre { background: #161616 !important; padding: 20px; border-radius: 12px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); position: relative; margin: 20px 0; }
+        code { font-family: 'Consolas', monospace; font-size: 13px; color: #e0e0e0; }
+        .copy-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; font-weight: bold; border: none; }
+        .copy-badge:hover { background: #fff; color: #000; }
+
+        .glass-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 15px 25px; display: flex; align-items: flex-end; gap: 15px; }
+        textarea { width: 100%; background: transparent; border: none; outline: none; color: inherit; resize: none; font-size: 14px; }
         .hidden { display: none !important; }
-        .fade-out { opacity: 0; visibility: hidden; transform: scale(1.1); filter: blur(20px); }
-
-        .sidebar { width: 300px; background: var(--side); border-right: 1px solid rgba(255,255,255,0.05); height: 100vh; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .main-ui { flex-grow: 1; height: 100vh; display: flex; flex-direction: column; position: relative; width: 100%; }
-        
-        .chat-scroll { flex-grow: 1; overflow-y: auto; padding: 40px 20px; scroll-behavior: smooth; }
-        .msg-container { max-width: 850px; margin: 0 auto; width: 100%; }
-        
-        .message-entry { margin-bottom: 60px; animation: slideIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-
-        .code-block-wrapper { position: relative; margin: 20px 0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .copy-btn { position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .copy-btn:hover { background: #fff; color: #000; }
-        pre { margin: 0 !important; padding: 20px !important; background: #000 !important; font-size: 13px !important; line-height: 1.5; }
-
-        .input-bar { padding: 0 40px 40px; }
-        .glass-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 18px 28px; display: flex; align-items: flex-end; gap: 15px; backdrop-filter: blur(20px); transition: 0.3s; }
-        .glass-box:focus-within { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
-        
-        textarea { width: 100%; background: transparent; border: none; outline: none; color: inherit; resize: none; font-size: 15px; line-height: 1.6; }
-        
-        #boot-bar-bg { width: 220px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin: 30px auto; }
-        #boot-bar-fill { height: 100%; width: 0%; background: #fff; transition: width 0.8s ease; shadow: 0 0 15px #fff; }
-
-        .btn-luxury { background: #fff; color: #000; padding: 16px; border-radius: 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; border: none; width: 100%; transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .btn-luxury:hover { transform: translateY(-3px); shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .fade-out { opacity: 0; transition: 0.6s; pointer-events: none; }
+        #bar-bg { width: 200px; height: 2px; background: #222; margin: 20px 0; border-radius: 2px; }
+        #bar-fill { height: 100%; width: 0; background: #fff; transition: 0.5s; }
     </style>
 </head>
 <body>
 
     <div id="intro" class="intro-overlay">
-        <div id="step-boot" class="text-center">
-            <h1 class="text-4xl font-light tracking-[0.5em] mb-2">ECLIPSE</h1>
-            <div id="boot-bar-bg"><div id="boot-bar-fill"></div></div>
-            <p id="boot-status" class="text-[10px] uppercase tracking-[0.3em] opacity-40 font-bold italic">Quantum Sincronization</p>
+        <div id="step-1" class="text-center flex flex-col items-center">
+            <h1 class="text-2xl font-light tracking-[0.5em]">ECLIPSE</h1>
+            <div id="bar-bg"><div id="bar-fill"></div></div>
+            <p id="boot-status" class="text-[9px] uppercase tracking-widest opacity-30">Inicializando</p>
         </div>
-
-        <div id="step-name" class="hidden text-center w-full max-w-sm px-10">
-            <h2 class="text-[10px] font-black uppercase tracking-[0.4em] mb-12 opacity-20">Identity Check</h2>
-            <p class="text-2xl font-light mb-10 italic">"Como devemos te chamar?"</p>
-            <input type="text" id="name-input" class="w-full bg-transparent border-b border-zinc-700 p-3 text-center text-xl outline-none mb-4 transition-colors focus:border-white" placeholder="...">
-            <p id="name-error" class="text-[9px] text-red-500 font-bold uppercase hidden mt-4">Nome não autorizado. Tente outro.</p>
-            <button onclick="saveIdentity()" class="btn-luxury mt-12">Confirmar</button>
+        <div id="step-2" class="hidden text-center w-full max-w-sm px-10">
+            <p class="text-xl font-light mb-8">"Como devemos te chamar?"</p>
+            <input type="text" id="name-in" class="w-full bg-transparent border-b border-zinc-700 p-2 text-center text-lg outline-none" placeholder="Seu nome">
+            <p id="name-err" class="text-[9px] text-red-500 font-bold uppercase hidden mt-4">Nome não permitido.</p>
+            <button onclick="saveName()" class="mt-10 w-full py-4 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest">Entrar</button>
         </div>
     </div>
 
     <aside class="sidebar">
-        <div class="p-10">
-            <h2 class="text-[10px] font-black tracking-[0.4em] uppercase opacity-20 mb-12">Intelligence</h2>
-            <button onclick="createNewChat()" class="btn-luxury text-[10px]">Nova Conversa</button>
+        <div class="p-8">
+            <button onclick="newChat()" class="w-full py-4 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest">Nova Conversa</button>
         </div>
-        <div id="chat-list" class="flex-1 overflow-y-auto px-8 space-y-4 no-scrollbar"></div>
-        <div class="p-10 border-t border-white/5">
-            <select id="model-select" class="w-full bg-white/5 border-none p-4 rounded-2xl text-[11px] font-bold outline-none cursor-pointer hover:bg-white/10 transition">
+        <div id="c-list" class="flex-1 overflow-y-auto px-6 space-y-2"></div>
+        <div class="p-8 border-t border-white/5">
+            <select id="m-sel" class="w-full bg-white/5 p-3 rounded-lg text-[10px] font-bold outline-none border-none">
                 <option value="ia">Eclipse IA</option>
                 <option value="waver">Eclipse Waver</option>
             </select>
@@ -77,150 +62,135 @@
     </aside>
 
     <main class="main-ui">
-        <header class="h-24 flex items-center justify-between px-12 border-b border-white/5">
-            <div class="flex flex-col">
-                <span id="header-title" class="text-xs font-bold uppercase tracking-widest">Sessão Privada</span>
-                <span class="text-[9px] opacity-20 font-bold uppercase tracking-widest mt-1">End-to-End Encryption</span>
-            </div>
-            <button onclick="fullWipe()" class="text-[10px] font-black text-red-500/50 hover:text-red-500 uppercase tracking-widest transition">Wipe System</button>
+        <header class="h-20 flex items-center justify-between px-10 border-b border-white/5">
+            <span id="h-title" class="text-[10px] font-bold uppercase tracking-widest opacity-40">Eclipse Session</span>
+            <button onclick="wipe()" class="text-[9px] font-bold text-red-500/50 uppercase">Reset System</button>
         </header>
 
-        <div id="flow-container" class="chat-scroll no-scrollbar">
-            <div id="messages-wrapper" class="msg-container"></div>
+        <div id="scroll" class="chat-scroll">
+            <div id="wrap" class="msg-container"></div>
         </div>
 
-        <div class="input-bar">
+        <div class="p-10">
             <div class="msg-container">
                 <div class="glass-box">
-                    <textarea id="user-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}" placeholder="Envie sua mensagem..."></textarea>
-                    <button onclick="send()" class="mb-1 opacity-40 hover:opacity-100 transition hover:scale-110">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                    <textarea id="u-in" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}" placeholder="Digite sua mensagem..."></textarea>
+                    <button onclick="send()" class="mb-1 opacity-50 hover:opacity-100">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                     </button>
                 </div>
-                <p class="text-[10px] text-center text-white/20 mt-8 font-medium">Eclipse v57 • Alta Performance em Linguagem</p>
             </div>
         </div>
     </main>
 
     <script>
-        const forbidden = ["pau", "cu", "puta", "viado", "caralho", "merda", "adm", "eclipse"];
-        let chats = JSON.parse(localStorage.getItem('ev57_chats')) || [];
-        let currentId = null;
-        let userName = localStorage.getItem('ev57_name') || "";
+        const bad = ["pau", "cu", "puta", "viado", "caralho", "merda", "adm", "eclipse"];
+        let chats = JSON.parse(localStorage.getItem('ev58_c')) || [];
+        let cur = null;
+        let uName = localStorage.getItem('ev58_n') || "";
 
-        async function runBoot() {
-            const fill = document.getElementById('boot-bar-fill');
+        async function boot() {
+            const fill = document.getElementById('bar-fill');
             const status = document.getElementById('boot-status');
-            const steps = ["Decrypting...", "Neural Link...", "Ready"];
-            for(let i=0; i<steps.length; i++) {
-                fill.style.width = ((i+1) * 33.3) + "%";
-                status.innerText = steps[i];
-                await new Promise(r => setTimeout(r, 700));
+            const logs = ["Carregando...", "Sincronizando...", "Pronto"];
+            for(let i=0; i<logs.length; i++) {
+                fill.style.width = ((i+1)*33) + "%";
+                status.innerText = logs[i];
+                await new Promise(r => setTimeout(r, 600));
             }
-            document.getElementById('step-boot').classList.add('hidden');
-            document.getElementById('step-name').classList.remove('hidden');
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
         }
 
-        function saveIdentity() {
-            const input = document.getElementById('name-input');
-            const val = input.value.trim().toLowerCase();
-            if(val.length < 2 || forbidden.some(w => val.includes(w))) {
-                document.getElementById('name-error').classList.remove('hidden'); return;
+        function saveName() {
+            const i = document.getElementById('name-in');
+            const v = i.value.trim().toLowerCase();
+            if(v.length < 2 || bad.some(w => v.includes(w))) {
+                document.getElementById('name-err').classList.remove('hidden'); return;
             }
-            userName = input.value.trim();
-            localStorage.setItem('ev57_name', userName);
-            localStorage.setItem('ev57_init', 'true');
+            uName = i.value.trim();
+            localStorage.setItem('ev58_n', uName);
+            localStorage.setItem('ev58_i', '1');
             document.getElementById('intro').classList.add('fade-out');
-            setTimeout(() => { document.getElementById('intro').style.display = 'none'; initApp(); }, 1000);
+            setTimeout(() => { document.getElementById('intro').style.display = 'none'; start(); }, 600);
         }
 
-        function copyCode(btn, text) {
-            navigator.clipboard.writeText(text);
-            btn.innerText = "Copied!";
+        function copy(btn, txt) {
+            navigator.clipboard.writeText(txt);
+            btn.innerText = "Copiado!";
             setTimeout(() => btn.innerText = "Copy", 2000);
         }
 
-        marked.setOptions({
-            highlight: function(code, lang) {
-                return hljs.highlightAuto(code).value;
-            },
-            renderer: new marked.Renderer()
-        });
-
-        // Custom Renderer para o Botão de Copiar
-        const renderer = new marked.Renderer();
-        renderer.code = function(code, language) {
-            const id = 'code-' + Math.random().toString(36).substr(2, 9);
-            return `<div class="code-block-wrapper">
-                        <button class="copy-btn" onclick="copyCode(this, \`${code.replace(/`/g, '\\`')}\`)">Copy</button>
-                        <pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>
-                    </div>`;
-        };
-        marked.setOptions({ renderer: renderer });
-
         async function send() {
-            const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            if(!text) return;
-            const chat = chats.find(c => c.id === currentId);
-            chat.messages.push({ role: 'user', parts: [{ text }] });
-            if(chat.title === 'Nova Conversa') chat.title = text.substring(0, 25);
-            input.value = ''; input.style.height = 'auto'; renderMessages();
+            const i = document.getElementById('u-in');
+            const t = i.value.trim();
+            if(!t) return;
+            const chat = chats.find(c => c.id === cur);
+            chat.messages.push({ role: 'user', parts: [{ text: t }] });
+            if(chat.title === 'Nova Conversa') chat.title = t.substring(0, 20);
+            i.value = ''; i.style.height = 'auto'; render();
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: chat.messages, modelType: document.getElementById('model-select').value, userName })
+                    body: JSON.stringify({ messages: chat.messages, modelType: document.getElementById('m-sel').value, userName: uName })
                 });
-                const data = await res.json();
-                chat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
-                saveData(); renderMessages();
+                const d = await res.json();
+                chat.messages.push({ role: 'model', parts: [{ text: d.reply }] });
+                save(); render();
             } catch(e) {}
         }
 
-        function renderMessages() {
-            const w = document.getElementById('messages-wrapper'); w.innerHTML = '';
-            const chat = chats.find(c => c.id === currentId);
+        function render() {
+            const w = document.getElementById('wrap'); w.innerHTML = '';
+            const chat = chats.find(c => c.id === cur);
             if(!chat) return;
-            document.getElementById('header-title').innerText = chat.title;
+            document.getElementById('h-title').innerText = chat.title;
             chat.messages.forEach(m => {
                 const ai = m.role === 'model';
                 const div = document.createElement('div');
                 div.className = 'message-entry';
-                div.innerHTML = `<div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-20 mb-5">${ai ? 'Eclipse Intelligence' : userName}</div>
-                                 <div class="text-[15px] leading-[1.8] font-medium opacity-90">${ai ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>`;
+                let content = ai ? marked.parse(m.parts[0].text) : m.parts[0].text;
+                
+                // Botão de copiar em blocos de código
+                if(ai) {
+                    content = content.replace(/<pre><code/g, '<pre><button class="copy-badge" onclick="copy(this, this.nextSibling.innerText)">Copy</button><code');
+                }
+
+                div.innerHTML = `<div class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-20 mb-3">${ai ? 'Eclipse' : uName}</div>
+                                 <div class="text-[14px] leading-relaxed">${content}</div>`;
                 w.appendChild(div);
             });
-            document.getElementById('flow-container').scrollTop = document.getElementById('flow-container').scrollHeight;
-            renderSidebar();
+            document.getElementById('scroll').scrollTop = document.getElementById('scroll').scrollHeight;
+            renderSide();
         }
 
-        function renderSidebar() {
-            const l = document.getElementById('chat-list'); l.innerHTML = '';
+        function renderSide() {
+            const l = document.getElementById('c-list'); l.innerHTML = '';
             chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `p-5 rounded-2xl cursor-pointer text-[11px] font-bold uppercase tracking-tight transition-all duration-300 ${c.id === currentId ? 'bg-white text-black scale-[1.02] shadow-2xl' : 'opacity-30 hover:opacity-100 hover:bg-white/5'}`;
-                d.onclick = () => { currentId = c.id; renderMessages(); };
+                d.className = `p-4 rounded-xl cursor-pointer text-[10px] font-bold uppercase transition ${c.id === cur ? 'bg-white text-black' : 'opacity-30 hover:opacity-100'}`;
+                d.onclick = () => { cur = c.id; render(); };
                 d.innerText = c.title;
                 l.appendChild(d);
             });
         }
 
-        function createNewChat() {
+        function newChat() {
             const id = Date.now();
             chats.unshift({ id, title: 'Nova Conversa', messages: [] });
-            currentId = id; saveData(); renderMessages();
+            cur = id; save(); render();
         }
 
-        function fullWipe() { if(confirm("Wipe System?")) { localStorage.clear(); location.reload(); } }
-        function saveData() { localStorage.setItem('ev57_chats', JSON.stringify(chats)); }
-        function initApp() { if(chats.length > 0) { currentId = chats[0].id; renderMessages(); } else { createNewChat(); } }
+        function wipe() { if(confirm("Limpar tudo?")) { localStorage.clear(); location.reload(); } }
+        function save() { localStorage.setItem('ev58_c', JSON.stringify(chats)); }
+        function start() { if(chats.length > 0) { cur = chats[0].id; render(); } else { newChat(); } }
 
-        if(localStorage.getItem('ev57_init')) {
+        if(localStorage.getItem('ev58_i')) {
             document.getElementById('intro').style.display = 'none';
-            initApp();
+            start();
         } else {
-            runBoot();
+            boot();
         }
     </script>
 </body>
