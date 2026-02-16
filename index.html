@@ -3,225 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA </title>
+    <title>Eclipse IA | v43</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { cursor: none !important; scroll-behavior: smooth; }
-        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .btn-active { background: #fff !important; color: #000 !important; }
-        
-        #custom-cursor { position: fixed; width: 40px; height: 40px; border: 1px solid #fff; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; mix-blend-mode: difference; }
-        
-        .widget-node { animation: slideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
-        @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        .message-anim { animation: msgSlide 0.4s ease-out forwards; }
-        @keyframes msgSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.03); z-index: 999; pointer-events: none; animation: scan 4s linear infinite; }
-        @keyframes scan { from { top: -10%; } to { top: 110%; } }
-        
+        * { cursor: none !important; }
+        body { background: #000; color: #fff; height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(50px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        #custom-cursor { position: fixed; width: 20px; height: 20px; border: 1px solid #fff; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: all 0.15s ease-out; mix-blend-mode: difference; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px currentColor; }
+        
+        @keyframes pulse-bg { 0% { background: rgba(255,255,255,0.02); } 50% { background: rgba(255,255,255,0.05); } 100% { background: rgba(255,255,255,0.02); } }
+        .active-session { animation: pulse-bg 2s infinite; border-left: 3px solid #fff !important; }
+
+        .widget-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .widget-card:hover { background: rgba(255,255,255,0.04); transform: translateY(-5px); }
     </style>
 </head>
-<body class="flex items-center justify-center">
+<body class="flex">
 
     <div id="custom-cursor"></div>
-    <div class="scanline"></div>
 
-    <main id="landing" class="relative z-10 flex flex-col items-center text-center p-6">
-        <div class="mb-6 px-4 py-1 glass rounded-full text-[8px] font-black tracking-[0.5em] uppercase text-zinc-500">Neural Network Active</div>
-        <h1 class="text-[12vw] font-black tracking-tighter italic mb-8 select-none">ECLIPSE</h1>
-        
-        <div class="flex gap-4 mb-20">
-            <button onclick="startApp()" class="px-12 py-6 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-full hover:scale-110 transition">Entrar no Core</button>
-            <button class="px-12 py-6 glass font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-white/10 transition">Docs</button>
+    <aside class="w-80 glass border-r border-white/5 flex flex-col p-6 hidden lg:flex z-50">
+        <div class="flex items-center gap-2 mb-12">
+            <div class="w-2 h-2 bg-white rounded-full"></div>
+            <span class="text-[9px] font-black uppercase tracking-[0.5em]">System Archive</span>
         </div>
+        
+        <button onclick="createNewChat()" class="w-full py-5 bg-white text-black text-[10px] font-black uppercase rounded-2xl hover:scale-[1.02] transition active:scale-95 shadow-xl shadow-white/5">+ New Instance</button>
+        
+        <div id="chat-list" class="mt-10 flex-1 space-y-3 overflow-y-auto no-scrollbar"></div>
 
-        <div class="flex gap-20">
-            <div class="text-left"><div class="text-3xl font-black">99.9%</div><div class="text-[8px] uppercase text-zinc-500 font-bold">Uptime</div></div>
-            <div class="text-left"><div class="text-3xl font-black">2.4ms</div><div class="text-[8px] uppercase text-zinc-500 font-bold">Neural Lag</div></div>
-            <div class="text-left"><div class="text-3xl font-black">256bit</div><div class="text-[8px] uppercase text-zinc-500 font-bold">AES Proxy</div></div>
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <div class="glass p-4 rounded-2xl">
+                <div class="text-[8px] font-bold text-zinc-500 uppercase mb-2">Hardware Acceleration</div>
+                <div class="flex justify-between items-end">
+                    <span class="mono text-xs">LPU Groq</span>
+                    <span class="text-[10px] text-green-500 font-bold">Active</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative bg-[#010101]">
+        <header class="p-8 border-b border-white/5 flex justify-between items-center z-10">
+            <div class="flex items-center gap-6">
+                <h1 class="text-2xl font-black italic tracking-tighter">ECLIPSE <span class="text-zinc-700">v43</span></h1>
+                <div class="h-4 w-[1px] bg-white/10"></div>
+                <div class="flex items-center text-green-500">
+                    <span class="status-dot bg-green-500 animate-pulse"></span>
+                    <span class="text-[8px] font-black uppercase tracking-widest">Network Secure</span>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <div id="stats-speed" class="mono text-[8px] text-zinc-500 p-2 glass rounded-lg uppercase">Speed: -- t/s</div>
+                <button onclick="location.reload()" class="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-red-500/20 transition">✕</button>
+            </div>
+        </header>
+
+        <div id="chat-flow" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-10 no-scrollbar"></div>
+
+        <div class="p-8 md:p-12 relative">
+            <div class="max-w-5xl mx-auto flex gap-4 p-3 glass rounded-[3rem] shadow-2xl focus-within:border-white/20 transition-all border border-transparent">
+                <button class="w-12 h-12 flex items-center justify-center glass rounded-full hover:bg-white/10 transition">📎</button>
+                <input id="user-input" autocomplete="off" type="text" onkeydown="if(event.key==='Enter') send()" placeholder="Initialize command..." class="flex-1 bg-transparent py-4 px-4 outline-none text-sm mono">
+                <button onclick="send()" class="bg-white text-black px-12 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] hover:bg-zinc-200 transition">Execute</button>
+            </div>
         </div>
     </main>
 
-    <div id="chat-ui" class="hidden fixed inset-0 flex bg-[#020202]">
+    <aside class="w-80 glass border-l border-white/5 p-8 hidden xl:flex flex-col gap-6">
+        <h3 class="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2">Live Diagnostics</h3>
         
-        <aside id="sidebar" class="w-80 glass border-r border-white/5 flex flex-col p-6 z-50">
-            <div class="mb-10 flex items-center gap-2">
-                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span class="text-[10px] font-black uppercase tracking-widest italic">Recentes</span>
+        <div class="widget-card glass p-6 rounded-[2rem]">
+            <div class="text-[8px] font-bold text-zinc-500 uppercase mb-4 tracking-widest">Global Clock</div>
+            <div id="clock" class="text-4xl font-black tracking-tighter italic">00:00</div>
+            <div id="date" class="text-[9px] mono text-zinc-600 mt-2">-- / -- / --</div>
+        </div>
+
+        <div class="widget-card glass p-6 rounded-[2rem]">
+            <div class="text-[8px] font-bold text-zinc-500 uppercase mb-4 tracking-widest">Server Load</div>
+            <div class="flex flex-wrap gap-1">
+                <div class="w-1 h-6 bg-white/20 rounded-full bar-anim"></div>
+                <div class="w-1 h-8 bg-white/40 rounded-full bar-anim"></div>
+                <div class="w-1 h-4 bg-white/10 rounded-full bar-anim"></div>
+                <div class="w-1 h-10 bg-white rounded-full bar-anim"></div>
+                <div class="w-1 h-5 bg-white/30 rounded-full bar-anim"></div>
             </div>
-            <button onclick="createNewChat()" class="w-full py-4 mb-6 bg-white/5 border border-white/10 text-[9px] font-black uppercase rounded-xl hover:bg-white hover:text-black transition">+ Novo Ciclo</button>
-            <div id="chat-list" class="flex-1 space-y-2 overflow-y-auto no-scrollbar"></div>
-        </aside>
+            <div class="mt-4 text-[10px] font-black uppercase italic">Processing Power: 94%</div>
+        </div>
 
-        <section class="flex-1 flex flex-col relative">
-            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-md">
-                <div class="flex gap-4">
-                    <button onclick="setMode('eco')" id="mode-eco" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Focado</button>
-                    <button onclick="setMode('creative')" id="mode-creative" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Criativo</button>
-                    <button onclick="setMode('dev')" id="mode-dev" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Dev</button>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div id="ping" class="mono text-[8px] text-zinc-500">PING: 0ms</div>
-                    <button onclick="location.reload()" class="p-3 glass rounded-xl hover:bg-red-500/20 transition">✕</button>
-                </div>
-            </header>
-
-            <div id="chat-flow" class="flex-1 overflow-y-auto p-10 space-y-12 no-scrollbar scroll-smooth"></div>
-
-            <div class="p-10 bg-gradient-to-t from-black via-black to-transparent">
-                <div class="max-w-4xl mx-auto flex gap-3 p-2 glass rounded-[2.5rem] ai-glow">
-                    <input id="user-input" type="text" placeholder="Digite comandos ou perguntas..." class="flex-1 bg-transparent py-5 px-8 outline-none text-sm mono">
-                    <button onclick="handleSend()" class="bg-white text-black px-12 rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition">Executar</button>
-                </div>
-            </div>
-        </section>
-
-        <aside class="w-80 glass border-l border-white/5 p-8 hidden xl:flex flex-col gap-8">
-            <div class="widget-node p-6 glass rounded-3xl">
-                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">Relógio Local</div>
-                <div id="clock" class="text-4xl font-black italic tracking-tighter">00:00:00</div>
-            </div>
-
-            <div class="widget-node p-6 glass rounded-3xl">
-                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">System Load</div>
-                <div class="space-y-4">
-                    <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div class="bg-white h-full" style="width: 45%"></div></div>
-                    <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div class="bg-blue-500 h-full" style="width: 22%"></div></div>
-                </div>
-            </div>
-
-            <div class="widget-node p-6 glass rounded-3xl flex-1">
-                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">Logs de Rede</div>
-                <div id="net-logs" class="mono text-[8px] text-zinc-500 space-y-1"></div>
-            </div>
-        </aside>
-    </div>
+        <div class="flex-1 glass p-6 rounded-[2rem] overflow-hidden flex flex-col">
+            <div class="text-[8px] font-bold text-zinc-500 uppercase mb-4 tracking-widest">Kernel Logs</div>
+            <div id="kernel-logs" class="mono text-[7px] text-zinc-700 space-y-2 overflow-hidden"></div>
+        </div>
+    </aside>
 
     <script>
         const cursor = document.getElementById('custom-cursor');
-        let chats = JSON.parse(localStorage.getItem('eclipse_v40')) || [];
+        let chats = JSON.parse(localStorage.getItem('eclipse_v43')) || [];
         let currentId = null;
-        let mode = 'eco';
 
-        // CURSOR & INTERATIVIDADE
         window.onmousemove = (e) => {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
-            if(e.target.closest('button') || e.target.closest('input')) {
-                cursor.style.width = '80px'; cursor.style.height = '80px'; cursor.style.background = 'rgba(255,255,255,0.1)';
+            if(e.target.closest('button, input, .session-item')) {
+                cursor.style.width = '60px'; cursor.style.height = '60px'; cursor.style.borderColor = 'rgba(255,255,255,0.2)';
             } else {
-                cursor.style.width = '40px'; cursor.style.height = '40px'; cursor.style.background = 'transparent';
+                cursor.style.width = '20px'; cursor.style.height = '20px'; cursor.style.borderColor = '#fff';
             }
         };
 
-        // RELÓGIO E LOGS
+        // UI Updates
         setInterval(() => {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            document.getElementById('date').innerText = now.toLocaleDateString('pt-BR');
             
-            const logs = document.getElementById('net-logs');
-            const lines = ["Incoming Packet...", "Auth Verified", "Node Sync: OK", "Data Encryption: AES-256", "Cache Purged"];
-            if(Math.random() > 0.8) {
-                const p = document.createElement('div');
-                p.innerText = `> ${lines[Math.floor(Math.random()*lines.length)]}`;
-                logs.prepend(p);
-                if(logs.children.length > 15) logs.lastChild.remove();
+            const logs = document.getElementById('kernel-logs');
+            const entries = ["> SYN_RECV", "> ACK_SENT", "> BUFFER_CLEARED", "> ENCRYPT_V2", "> NODE_SYNC"];
+            if(Math.random() > 0.7) {
+                const div = document.createElement('div');
+                div.innerText = entries[Math.floor(Math.random()*entries.length)];
+                logs.prepend(div);
+                if(logs.children.length > 20) logs.lastChild.remove();
             }
-            document.getElementById('ping').innerText = `PING: ${Math.floor(Math.random()*15 + 2)}ms`;
         }, 1000);
 
-        function setMode(m) {
-            mode = m;
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('btn-active'));
-            document.getElementById(`mode-${m}`).classList.add('btn-active');
-        }
-
-        function startApp() {
-            document.getElementById('landing').classList.add('hidden');
-            document.getElementById('chat-ui').classList.remove('hidden');
-            setMode('eco');
-            if(chats.length > 0) switchChat(chats[0].id); else createNewChat();
-            renderChatList();
-        }
-
-        function createNewChat() {
-            const id = Date.now();
-            chats.unshift({ id, title: 'Nova Sessão', messages: [{ role: 'model', parts: [{ text: "**Eclipse v40 Absolute** online. Como posso processar seus dados hoje?" }] }] });
-            currentId = id; save(); renderChatList(); renderMessages();
-        }
-
-        async function handleSend() {
+        async function send() {
             const input = document.getElementById('user-input');
             const val = input.value.trim();
             if(!val) return;
 
-            // COMANDOS INTERATIVOS
-            if(val === '/clear') { chats.find(c => c.id === currentId).messages = []; renderMessages(); input.value = ''; return; }
-            if(val === '/theme') { document.body.classList.toggle('invert'); input.value = ''; return; }
-
             const activeChat = chats.find(c => c.id === currentId);
             activeChat.messages.push({ role: 'user', parts: [{ text: val }] });
-            if(activeChat.title === 'Nova Sessão') activeChat.title = val.substring(0, 15).toUpperCase();
+            if(activeChat.title === 'New Instance') activeChat.title = val.substring(0, 12).toUpperCase();
             
-            input.value = ''; renderMessages();
+            input.value = ''; render();
             const loader = createLoader();
+            const start = Date.now();
 
             try {
-                // Aqui você ligaria com sua API
-                setTimeout(() => {
-                    loader.remove();
-                    activeChat.messages.push({ role: 'model', parts: [{ text: `Modo **${mode.toUpperCase()}** ativo. Processando solicitação...\n\nOtimização de dados para: \`${val}\` concluída com sucesso.` }] });
-                    save(); renderMessages(); renderChatList();
-                }, 1000);
-            } catch(e) { loader.innerText = "ERRO_DE_CONEXÃO"; }
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: activeChat.messages })
+                });
+                const data = await res.json();
+                
+                const time = (Date.now() - start) / 1000;
+                document.getElementById('stats-speed').innerText = `Speed: ${(data.reply.length / 4 / time).toFixed(1)} t/s`;
+                
+                loader.remove();
+                activeChat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
+                save(); render();
+            } catch(e) { loader.innerText = "> FATAL_ERROR: CONNECTION_REFUSED"; }
         }
 
-        function renderMessages() {
-            const flow = document.getElementById('chat-flow'); flow.innerHTML = '';
+        function render() {
+            const f = document.getElementById('chat-flow'); f.innerHTML = '';
             const chat = chats.find(c => c.id === currentId);
             chat.messages.forEach(m => {
                 const isB = m.role === 'model';
-                const div = document.createElement('div');
-                div.className = `flex ${isB ? 'justify-start' : 'justify-end'} message-anim`;
-                div.innerHTML = `
-                    <div class="${isB ? 'glass border border-white/5 p-8' : 'bg-white text-black p-5 px-8'} rounded-[2rem] max-w-[80%]">
-                        <span class="text-[8px] font-black uppercase tracking-[0.3em] mb-4 block ${isB ? 'text-zinc-500' : 'text-zinc-400'}">${isB ? 'Eclipse Engine' : 'Admin'}</span>
-                        <div class="text-sm leading-relaxed mono">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
+                const d = document.createElement('div');
+                d.className = `flex ${isB ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
+                d.innerHTML = `
+                    <div class="${isB ? 'glass border border-white/5 p-8 shadow-2xl' : 'bg-white text-black p-5 px-9'} rounded-[2.5rem] max-w-[85%] text-sm leading-relaxed mono">
+                        <span class="text-[7px] font-black uppercase tracking-[0.4em] mb-4 block opacity-30">${isB ? 'Eclipse Engine' : 'Administrator'}</span>
+                        ${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}
                     </div>`;
-                flow.appendChild(div);
+                f.appendChild(d);
             });
-            flow.scrollTop = flow.scrollHeight;
+            f.querySelectorAll('pre code').forEach(c => {
+                hljs.highlightElement(c);
+                c.className += " no-scrollbar";
+            });
+            f.scrollTop = f.scrollHeight;
+            renderList();
         }
 
         function createLoader() {
-            const d = document.createElement('div'); d.className = 'text-[9px] mono text-zinc-500 animate-pulse'; d.innerText = "> CALCULANDO_CORE_LOGIC...";
+            const d = document.createElement('div'); 
+            d.className = 'flex items-center gap-3 text-[9px] mono text-zinc-500 animate-pulse px-4';
+            d.innerHTML = `<span class="w-2 h-2 bg-zinc-500 rounded-full"></span> EXECUTING_LPU_INFERENCE...`;
             document.getElementById('chat-flow').appendChild(d);
+            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
             return d;
         }
 
-        function renderChatList() {
+        function createNewChat() {
+            const id = Date.now();
+            chats.unshift({ id, title: 'New Instance', messages: [] });
+            currentId = id; save(); render();
+        }
+
+        function renderList() {
             const l = document.getElementById('chat-list'); l.innerHTML = '';
             chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `p-4 rounded-xl cursor-none transition-all ${c.id === currentId ? 'bg-white text-black translate-x-2' : 'hover:bg-white/5 text-zinc-500'}`;
-                d.onclick = () => switchChat(c.id);
-                d.innerHTML = `<div class="flex justify-between items-center"><span class="text-[9px] font-black uppercase tracking-widest">${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-[8px] opacity-30 hover:opacity-100">✕</span></div>`;
+                d.className = `session-item p-5 rounded-2xl transition-all cursor-none border border-transparent ${c.id === currentId ? 'active-session' : 'hover:bg-white/5 text-zinc-600'}`;
+                d.onclick = () => { currentId = c.id; render(); };
+                d.innerHTML = `<div class="flex justify-between items-center"><span class="text-[9px] font-black tracking-widest uppercase">${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-[8px] opacity-20 hover:opacity-100 transition">✕</span></div>`;
                 l.appendChild(d);
             });
         }
 
-        function switchChat(id) { currentId = id; renderChatList(); renderMessages(); }
-        function deleteChat(id) { chats = chats.filter(c => c.id !== id); if(chats.length > 0) currentId = chats[0].id; else createNewChat(); save(); renderChatList(); renderMessages(); }
-        function save() { localStorage.setItem('eclipse_v40', JSON.stringify(chats)); }
-        document.getElementById('user-input').onkeydown = (e) => { if(e.key === 'Enter') handleSend(); };
+        function deleteChat(id) {
+            chats = chats.filter(c => c.id !== id);
+            if(chats.length > 0) currentId = chats[0].id; else createNewChat();
+            save(); render();
+        }
+
+        function save() { localStorage.setItem('eclipse_v43', JSON.stringify(chats)); }
+        if(chats.length > 0) { currentId = chats[0].id; render(); } else { createNewChat(); }
     </script>
 </body>
 </html>
