@@ -1,129 +1,82 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse Intelligence</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        :root { --bg: #ffffff; --sidebar: #f8f9fa; --text: #1a1a1a; --accent: #000000; }
-        @media (prefers-color-scheme: dark) { :root { --bg: #0d0d0d; --sidebar: #141414; --text: #f0f0f0; --accent: #ffffff; } }
-
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-        
-        .intro-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); }
-        .fade-out { opacity: 0; visibility: hidden; transform: scale(1.05); }
-
-        .sidebar { background: var(--sidebar); border-right: 1px solid rgba(128,128,128,0.1); transition: transform 0.3s ease; }
-        .chat-container { max-width: 800px; margin: 0 auto; transition: all 0.5s ease; }
-        .message-entry { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
-        
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
-
-        .glass-input { background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.1); backdrop-filter: blur(10px); border-radius: 24px; transition: 0.3s; }
-        .glass-input:focus-within { border-color: var(--accent); background: rgba(128,128,128,0.08); }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        pre { background: #1a1a1a !important; color: #fff; padding: 20px; border-radius: 16px; margin: 15px 0; font-size: 13px; }
+        /* [Mesmos estilos da v52] */
+        .name-input-active { transform: scale(1); opacity: 1; }
+        .hidden-intro { display: none !important; }
     </style>
 </head>
 <body class="flex h-screen">
 
     <div id="intro" class="intro-overlay">
-        <div class="text-center">
+        <div id="intro-step-1" class="text-center transition-all duration-1000">
             <h1 class="text-4xl font-light tracking-[0.2em] mb-4">ECLIPSE</h1>
-            <div id="progress-container" class="w-48 h-[2px] bg-zinc-200 dark:bg-zinc-800 mx-auto overflow-hidden rounded-full">
+            <div class="w-48 h-[2px] bg-zinc-200 dark:bg-zinc-800 mx-auto overflow-hidden rounded-full">
                 <div id="progress-bar" class="w-0 h-full bg-black dark:bg-white transition-all duration-700"></div>
             </div>
-            <p id="status-text" class="text-[10px] mt-4 uppercase tracking-widest text-zinc-400 font-bold">Verificando Ambiente</p>
+            <p id="status-text" class="text-[10px] mt-4 uppercase tracking-widest text-zinc-400 font-bold italic">Carregando Protocolos</p>
+        </div>
+
+        <div id="intro-step-2" class="hidden text-center max-w-xs w-full px-6">
+            <h2 class="text-xs font-bold uppercase tracking-[0.3em] mb-8 opacity-40">Identificação Necessária</h2>
+            <p class="text-xl font-light mb-6 italic">"Como devemos te chamar?"</p>
+            <input type="text" id="user-name-field" class="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 p-2 text-center outline-none mb-4" placeholder="Seu nome ou apelido">
+            <p id="name-error" class="text-[10px] text-red-500 font-bold uppercase hidden">Nome não permitido. Tente outro.</p>
+            <button onclick="saveName()" class="mt-8 px-10 py-3 bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold uppercase tracking-widest rounded-full">Confirmar</button>
         </div>
     </div>
 
-    <aside id="sidebar-ui" class="w-72 sidebar flex flex-col p-8 hidden md:flex">
-        <div class="mb-12">
-            <h2 class="text-xs font-800 uppercase tracking-widest opacity-30 mb-8">Intelligence</h2>
-            <button onclick="createNewChat()" class="w-full py-4 px-6 bg-black dark:bg-white text-white dark:text-black rounded-2xl text-[11px] font-bold uppercase tracking-widest transition hover:shadow-xl active:scale-95">Novo Chat</button>
-        </div>
-
-        <input type="text" oninput="renderList(this.value)" placeholder="Filtrar conversas" class="bg-transparent border-b border-zinc-200 dark:border-zinc-800 p-3 text-xs mb-8 outline-none focus:border-black dark:focus:border-white transition-colors">
-
-        <div id="chat-list" class="flex-1 overflow-y-auto no-scrollbar space-y-3"></div>
-
-        <div class="mt-auto pt-8 border-t border-zinc-100 dark:border-zinc-900">
-            <label class="text-[9px] font-black text-zinc-400 block mb-3 uppercase tracking-widest">Motor Operacional</label>
-            <select id="model-select" class="w-full bg-zinc-100 dark:bg-zinc-900 border-none p-4 rounded-2xl text-xs font-bold appearance-none cursor-pointer">
-                <option value="ia">Eclipse IA</option>
-                <option value="waver">Eclipse Waver</option>
-            </select>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col relative">
-        <header class="h-20 flex items-center justify-between px-10 border-b border-zinc-100 dark:border-zinc-900">
-            <span id="header-title" class="text-[11px] font-bold uppercase tracking-widest opacity-40">Aguardando Comando</span>
-            <button onclick="clearHistory()" class="text-[9px] font-black uppercase tracking-[0.2em] text-red-500 hover:opacity-50 transition">Reset System</button>
-        </header>
-
-        <div id="chat-flow" class="flex-1 overflow-y-auto no-scrollbar">
-            <div id="messages-wrapper" class="chat-container py-12 px-8"></div>
-        </div>
-
-        <div class="p-10">
-            <div class="chat-container">
-                <div class="glass-input p-2 flex items-end gap-3 px-6">
-                    <textarea id="user-input" rows="1" oninput="autoResize(this)" onkeydown="checkKey(event)" placeholder="Em que posso ajudar?" class="flex-1 bg-transparent py-4 text-sm outline-none resize-none max-h-48"></textarea>
-                    <button onclick="send()" class="mb-3 p-2 hover:scale-110 transition">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                    </button>
-                </div>
-                <p class="text-[10px] text-center text-zinc-400 mt-8 font-medium">Eclipse v52 • Inteligência Artificial de Alta Performance</p>
-            </div>
-        </div>
-    </main>
-
     <script>
-        let chats = JSON.parse(localStorage.getItem('eclipse_v52')) || [];
+        // LISTA SIMPLIFICADA DE TERMOS PROIBIDOS (Adicione mais se quiser)
+        const forbiddenNames = ["pau", "cu", "viado", "puta", "caralho", "merda", "adm", "eclipse"];
+
+        let chats = JSON.parse(localStorage.getItem('eclipse_v53')) || [];
         let currentId = null;
+        let userName = localStorage.getItem('eclipse_user_name') || "";
 
-        // Intro Logic with Memory
         async function runIntro() {
-            const hasSeen = localStorage.getItem('eclipse_intro_seen');
+            // REINICIADO: Removemos a trava para todos verem a intro de novo desta vez
             const intro = document.getElementById('intro');
+            const step1 = document.getElementById('intro-step-1');
+            const step2 = document.getElementById('intro-step-2');
             const bar = document.getElementById('progress-bar');
-            const status = document.getElementById('status-text');
 
-            if(hasSeen) {
-                intro.style.display = 'none';
-                initApp();
+            // Simulação de carregamento
+            for(let i=1; i<=4; i++){
+                bar.style.width = (i*25) + "%";
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            step1.classList.add('opacity-0');
+            setTimeout(() => {
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+            }, 800);
+        }
+
+        function saveName() {
+            const field = document.getElementById('user-name-field');
+            const name = field.value.trim().toLowerCase();
+            const error = document.getElementById('name-error');
+
+            if(name.length < 2 || forbiddenNames.some(n => name.includes(n))) {
+                error.classList.remove('hidden');
+                field.value = "";
                 return;
             }
 
-            const steps = ["Iniciando Motores", "Carregando Bibliotecas", "Configurando Interface", "Pronto"];
-            for(let i=0; i<steps.length; i++) {
-                bar.style.width = ((i+1) * 25) + "%";
-                status.innerText = steps[i];
-                await new Promise(r => setTimeout(r, 800));
-            }
-
-            intro.classList.add('fade-out');
-            localStorage.setItem('eclipse_intro_seen', 'true');
-            setTimeout(() => { intro.style.display = 'none'; initApp(); }, 1000);
+            userName = field.value;
+            localStorage.setItem('eclipse_user_name', userName);
+            // Salva que já viu para as próximas vezes
+            localStorage.setItem('eclipse_v53_seen', 'true');
+            
+            document.getElementById('intro').classList.add('fade-out');
+            setTimeout(() => {
+                document.getElementById('intro').style.display = 'none';
+                initApp();
+            }, 1000);
         }
-
-        function initApp() {
-            if(chats.length > 0) { currentId = chats[0].id; render(); } else { createNewChat(); }
-        }
-
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
-        }
-
-        function checkKey(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
 
         async function send() {
             const input = document.getElementById('user-input');
@@ -133,83 +86,35 @@
 
             const activeChat = chats.find(c => c.id === currentId);
             activeChat.messages.push({ role: 'user', parts: [{ text: val }] });
-            if(activeChat.title === 'Nova Conversa') activeChat.title = val.substring(0, 25);
             
-            input.value = ''; input.style.height = 'auto';
-            render();
-
-            const loader = document.createElement('div');
-            loader.className = 'py-10 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400 animate-pulse';
-            loader.innerText = 'Processando...';
-            document.getElementById('messages-wrapper').appendChild(loader);
+            input.value = ''; render();
 
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: activeChat.messages, modelType })
+                    body: JSON.stringify({ 
+                        messages: activeChat.messages, 
+                        modelType,
+                        userName: userName // ENVIANDO O NOME PARA A IA
+                    })
                 });
                 const data = await res.json();
-                loader.remove();
                 activeChat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
                 save(); render();
-            } catch(e) { loader.innerText = "ERRO DE CONEXÃO."; }
+            } catch(e) { }
         }
 
-        function render() {
-            const wrapper = document.getElementById('messages-wrapper');
-            wrapper.innerHTML = '';
-            const chat = chats.find(c => c.id === currentId);
-            if(!chat) return;
+        // [Restante das funções: initApp, render, renderList, deleteChat, etc.]
+        // Lembre-se de atualizar o nome da chave de salvamento para 'eclipse_v53'
 
-            document.getElementById('header-title').innerText = chat.title;
-
-            chat.messages.forEach(m => {
-                const isAI = m.role === 'model';
-                const div = document.createElement('div');
-                div.className = "message-entry mb-12 last:mb-0";
-                div.innerHTML = `
-                    <div class="text-[9px] font-black uppercase tracking-[0.2em] mb-4 opacity-30">${isAI ? 'Eclipse Intelligence' : 'User Input'}</div>
-                    <div class="text-sm leading-[1.8] font-medium opacity-90">${isAI ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
-                `;
-                wrapper.appendChild(div);
-            });
-            document.querySelectorAll('pre code').forEach(hljs.highlightElement);
-            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
-            renderList();
+        // Verifica se já viu a intro v53
+        if(localStorage.getItem('eclipse_v53_seen')) {
+            document.getElementById('intro').style.display = 'none';
+            initApp();
+        } else {
+            runIntro();
         }
-
-        function renderList(filter = '') {
-            const l = document.getElementById('chat-list'); l.innerHTML = '';
-            chats.filter(c => c.title.toLowerCase().includes(filter.toLowerCase())).forEach(c => {
-                const d = document.createElement('div');
-                d.className = `p-4 rounded-2xl cursor-pointer flex justify-between items-center transition ${c.id === currentId ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'opacity-40 hover:opacity-100'}`;
-                d.onclick = () => { currentId = c.id; render(); };
-                d.innerHTML = `<span class="truncate text-[11px] font-bold uppercase tracking-tighter">${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-[10px]">✕</span>`;
-                l.appendChild(d);
-            });
-        }
-
-        function createNewChat() {
-            const id = Date.now();
-            chats.unshift({ id, title: 'Nova Conversa', messages: [] });
-            currentId = id; save(); render();
-        }
-
-        function deleteChat(id) {
-            chats = chats.filter(c => c.id !== id);
-            if(chats.length > 0) currentId = chats[0].id; else createNewChat();
-            save(); render();
-        }
-
-        function clearHistory() { 
-            localStorage.removeItem('eclipse_intro_seen'); 
-            localStorage.removeItem('eclipse_v52'); 
-            location.reload(); 
-        }
-        
-        function save() { localStorage.setItem('eclipse_v52', JSON.stringify(chats)); }
-        runIntro();
     </script>
 </body>
 </html>
