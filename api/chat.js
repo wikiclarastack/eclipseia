@@ -9,20 +9,25 @@ export default async function handler(req, res) {
             const apiKey = process.env.GEMINI_API_KEY;
             const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
 
+            const formattedContents = messages.map(m => ({
+                role: m.role === 'model' ? 'model' : 'user',
+                parts: [{ text: m.parts[0].text }]
+            }));
+
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: messages.map(m => ({
-                        role: m.role === 'model' ? 'model' : 'user',
-                        parts: [{ text: m.parts[0].text }]
-                    })),
-                    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+                    contents: [
+                        { role: 'user', parts: [{ text: `INSTRUÇÃO DE SISTEMA: ${SYSTEM_PROMPT}` }] },
+                        { role: 'model', parts: [{ text: "Entendido. Sistema configurado." }] },
+                        ...formattedContents
+                    ]
                 })
             });
 
             const data = await response.json();
-            if (data.error) return res.status(500).json({ reply: `Erro Waver (Gemini Pro): ${data.error.message}` });
+            if (data.error) return res.status(500).json({ reply: `Erro Waver: ${data.error.message}` });
             
             return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
 
@@ -50,6 +55,6 @@ export default async function handler(req, res) {
             res.status(200).json({ reply: data.choices[0].message.content });
         }
     } catch (error) {
-        res.status(500).json({ reply: "Falha na comunicação com o servidor central." });
+        res.status(500).json({ reply: "Falha na comunicação com os servidores centrais." });
     }
 }
