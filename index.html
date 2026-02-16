@@ -3,125 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse OS | v21</title>
+    <title>Eclipse</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
-        * { cursor: none !important; box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow: hidden; height: 100vh; }
+        * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; }
+
+        /* Animações de Transição */
+        .fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Glassmorphism Suave */
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        #custom-cursor { position: fixed; width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); mix-blend-mode: difference; transition: width 0.3s, height 0.3s; }
-        .cursor-dot { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; }
+        /* Inputs elegantes */
+        input { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        input:focus { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.3); outline: none; }
 
-        .os-window { background: rgba(5,5,5,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); }
-        .glass-btn { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; }
-        .glass-btn:hover { background: #fff; color: #000; }
+        /* Scrollbar Invisível */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
 
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: 1s; }
-        
-        .stat-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
-        .stat-fill { height: 100%; background: #fff; width: 0%; transition: width 1s; }
+        .btn-primary { background: #fff; color: #000; transition: 0.3s; font-weight: 700; }
+        .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-primary:active { transform: scale(0.98); }
 
-        #bg-canvas { position: fixed; inset: 0; z-index: 0; }
-        .glitch:hover { animation: glitch-anim 0.2s infinite; }
-        @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
-
-        #chat-ui { display: none; }
-        .sidebar { width: 300px; transform: translateX(-100%); transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
-        .sidebar.open { transform: translateX(0); }
+        #chat-flow div p { margin-bottom: 0.5rem; }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center overflow-hidden">
 
-    <div id="custom-cursor"><div class="cursor-dot"></div></div>
-    <canvas id="bg-canvas"></canvas>
-
-    <section id="login-screen">
-        <div class="os-window p-10 w-full max-w-md text-center">
-            <h2 class="text-4xl font-black mb-2 tracking-tighter">ECLIPSE OS</h2>
-            <p class="text-[10px] text-gray-500 uppercase tracking-[0.4em] mb-8">Access Verification</p>
+    <section id="auth-screen" class="w-full max-w-md p-6 md:p-10 fade-in z-50">
+        <div id="login-container">
+            <h1 class="text-5xl font-bold tracking-tighter mb-2">Eclipse</h1>
+            <p class="text-gray-400 mb-8">Conecte-se para continuar.</p>
             <div class="space-y-4">
-                <input id="auth-email" type="email" placeholder="Terminal ID (Email)" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none focus:border-white/40 mono text-xs">
-                <input id="auth-pass" type="password" placeholder="Passkey" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none focus:border-white/40 mono text-xs">
-                <button onclick="handleLogin()" class="w-full bg-white text-black py-4 font-black text-xs uppercase rounded-xl hover:scale-105 transition">Initialize Session</button>
-                <button onclick="handleSignup()" class="text-[9px] text-gray-600 font-bold uppercase tracking-widest hover:text-white transition">Request New Access</button>
+                <input id="login-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl">
+                <input id="login-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl">
+                <button onclick="handleLogin()" class="btn-primary w-full p-4 rounded-2xl">Entrar</button>
+                <p class="text-center text-sm text-gray-500 mt-6">Ainda não tem acesso? <button onclick="toggleAuth(false)" class="text-white font-semibold">Criar conta</button></p>
+            </div>
+        </div>
+
+        <div id="register-container" class="hidden">
+            <h1 class="text-4xl font-bold tracking-tighter mb-2">Criar conta</h1>
+            <p class="text-gray-400 mb-8">Junte-se ao sistema.</p>
+            <div class="space-y-4">
+                <input id="reg-name" type="text" placeholder="Como devemos te chamar?" class="w-full p-4 rounded-2xl">
+                <input id="reg-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl">
+                <input id="reg-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl">
+                <button onclick="handleSignup()" class="btn-primary w-full p-4 rounded-2xl">Finalizar Registro</button>
+                <p class="text-center text-sm text-gray-500 mt-6">Já possui conta? <button onclick="toggleAuth(true)" class="text-white font-semibold">Fazer Login</button></p>
             </div>
         </div>
     </section>
 
-    <main id="main-content" class="relative z-10 h-screen w-screen flex flex-col hidden">
+    <main id="app-main" class="hidden fixed inset-0 flex flex-col md:flex-row bg-[#080808] fade-in">
         
-        <nav class="h-14 border-b border-white/5 bg-black/50 backdrop-blur-xl flex justify-between items-center px-6">
-            <div class="flex items-center gap-4">
-                <span class="font-black italic tracking-tighter text-xl">ECLIPSE</span>
-                <div class="h-4 w-[1px] bg-white/10"></div>
-                <span id="os-clock" class="mono text-[10px] text-gray-500">00:00:00</span>
+        <aside id="sidebar" class="w-full md:w-72 h-full glass border-none md:border-r border-white/5 flex flex-col z-40 transition-all duration-500 ease-in-out">
+            <div class="p-6 flex items-center justify-between">
+                <span class="text-2xl font-bold tracking-tighter">Eclipse</span>
+                <button onclick="toggleSidebar(false)" class="md:hidden text-gray-400">✕</button>
             </div>
-            <div class="flex gap-6 items-center">
-                <div class="flex flex-col items-end">
-                    <span class="text-[8px] font-black text-gray-600 uppercase">Sys Load</span>
-                    <div class="w-24 stat-bar mt-1"><div id="load-fill" class="stat-fill"></div></div>
-                </div>
-                <button onclick="logout()" class="text-[9px] font-black text-red-500 hover:text-white transition">LOGOUT</button>
-            </div>
-        </nav>
 
-        <div class="flex flex-1 overflow-hidden">
-            <aside id="sidebar" class="sidebar bg-black/80 border-r border-white/5 p-6 flex flex-col">
-                <button onclick="newChat()" class="glass-btn w-full py-4 rounded-xl font-black text-[10px] uppercase mb-8">+ Nova Sessão</button>
-                <div id="chat-list" class="flex-1 space-y-2 overflow-y-auto"></div>
-            </aside>
-
-            <section class="flex-1 flex flex-col relative">
-                <div id="landing" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-10">
-                    <h1 class="text-[10rem] font-black tracking-tighter glitch select-none">ECLIPSE</h1>
-                    <div class="grid grid-cols-3 gap-6 w-full max-w-4xl mt-10">
-                        <div class="os-window p-6 text-center">
-                            <span class="text-[8px] font-black text-gray-600 block mb-2 uppercase">Core Status</span>
-                            <span class="text-green-500 font-black text-sm">OPTIMIZED</span>
-                        </div>
-                        <div class="os-window p-6 text-center">
-                            <span class="text-[8px] font-black text-gray-600 block mb-2 uppercase">Neural Link</span>
-                            <span class="text-white font-black text-sm">ESTABLISHED</span>
-                        </div>
-                        <div class="os-window p-6 text-center">
-                            <span class="text-[8px] font-black text-gray-600 block mb-2 uppercase">Safety Protocol</span>
-                            <span class="text-red-500 font-black text-sm">BYPASSED</span>
-                        </div>
-                    </div>
-                    <button onclick="openChat()" class="mt-12 bg-white text-black px-16 py-6 rounded-full font-black text-xs uppercase tracking-[0.5em] hover:scale-110 transition shadow-2xl">Acessar Terminal</button>
+            <div class="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar" id="chat-history">
                 </div>
 
-                <div id="chat-ui" class="flex-1 flex flex-col">
-                    <div id="chat-flow" class="flex-1 overflow-y-auto p-10 space-y-12"></div>
-                    <div class="p-10">
-                        <div class="max-w-4xl mx-auto flex gap-4 glass-btn p-3 rounded-2xl shadow-2xl focus-within:border-white/40">
-                            <button onclick="toggleSidebar()" class="px-4 text-[10px] font-black opacity-50 hover:opacity-100 uppercase">Sessões</button>
-                            <input id="user-input" type="text" placeholder="Executar comando..." class="flex-1 bg-transparent py-4 px-2 outline-none text-sm mono">
-                            <button onclick="handleSend()" class="bg-white text-black px-10 py-4 rounded-xl font-black text-[10px] uppercase">Enviar</button>
-                        </div>
+            <div class="p-4 border-t border-white/5">
+                <div onclick="openSettings()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition cursor-pointer">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/shapes/svg?seed=Eclipse" class="w-10 h-10 rounded-full border border-white/10 object-cover">
+                    <div class="flex-1 overflow-hidden">
+                        <p id="display-name" class="text-sm font-bold truncate">Usuário</p>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Configurações</p>
                     </div>
                 </div>
-            </section>
-        </div>
+            </div>
+        </aside>
+
+        <section class="flex-1 flex flex-col relative h-full">
+            <header class="p-5 flex items-center md:hidden border-b border-white/5">
+                <button onclick="toggleSidebar(true)" class="text-sm font-bold">Histórico</button>
+            </header>
+
+            <div id="chat-flow" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 no-scrollbar">
+                </div>
+
+            <div class="p-6 md:pb-10 md:px-12">
+                <div class="max-w-4xl mx-auto flex items-center gap-3 glass p-2 rounded-[2.5rem]">
+                    <button onclick="newChat()" class="p-4 text-gray-400 hover:text-white transition desktop-only">＋</button>
+                    <input id="user-input" type="text" placeholder="Como posso ajudar hoje?" class="flex-1 bg-transparent py-4 px-2 border-none text-sm">
+                    <button onclick="handleSend()" class="btn-primary px-8 py-4 rounded-full text-xs uppercase">Enviar</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <div class="w-full max-w-sm glass rounded-[3rem] p-8 fade-in">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-xl font-bold">Perfil</h2>
+                    <button onclick="closeSettings()" class="text-gray-500">Fechar</button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="flex flex-col items-center">
+                        <img id="preview-avatar" src="" class="w-20 h-20 rounded-full mb-4 border-2 border-white/10">
+                        <input id="set-avatar-url" type="text" placeholder="URL da foto de perfil" class="w-full p-3 rounded-xl text-xs mb-3">
+                        <input id="set-display-name" type="text" placeholder="Nome de exibição" class="w-full p-3 rounded-xl text-xs">
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <button onclick="saveProfile()" class="btn-primary w-full py-4 rounded-2xl text-sm">Salvar Alterações</button>
+                        <button onclick="logout()" class="w-full py-4 text-red-500 font-bold text-sm">Sair da conta</button>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE (Lendo das Variáveis de Ambiente)
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAsP3iDayVoX9LivuqBWMXpMbsidn5Fd-0",
             authDomain: "fkaa-2e852.firebaseapp.com",
@@ -133,110 +138,97 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // CURSOR TRACKER
-        const cursor = document.getElementById('custom-cursor');
-        window.onmousemove = (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-            if(e.target.closest('button, input, .os-window')) {
-                cursor.style.width = '60px'; cursor.style.height = '60px';
-            } else {
-                cursor.style.width = '20px'; cursor.style.height = '20px';
-            }
-        };
-
-        // RELÓGIO E STATUS
-        setInterval(() => {
-            document.getElementById('os-clock').innerText = new Date().toLocaleTimeString('pt-BR');
-            document.getElementById('load-fill').style.width = Math.random() * 100 + '%';
-        }, 1000);
-
-        // LOGIN / AUTH
-        async function handleLogin() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-                initOS();
-            } catch(e) { alert("Acesso Negado: Credenciais Inválidas."); }
+        // AUTH & UI FLOW
+        function toggleAuth(isLogin) {
+            document.getElementById('login-container').classList.toggle('hidden', !isLogin);
+            document.getElementById('register-container').classList.toggle('hidden', isLogin);
         }
 
         async function handleSignup() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
             try {
-                await auth.createUserWithEmailAndPassword(email, pass);
-                alert("Novo acesso criado. Bem-vindo ao Eclipse.");
-                initOS();
+                const res = await auth.createUserWithEmailAndPassword(email, pass);
+                await res.user.updateProfile({ displayName: name });
+                location.reload();
             } catch(e) { alert(e.message); }
         }
 
-        function initOS() {
-            document.getElementById('login-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-content').classList.remove('hidden');
-                initBg();
-            }, 1000);
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            try { await auth.signInWithEmailAndPassword(email, pass); initApp(); } catch(e) { alert("Erro no login."); }
         }
 
         function logout() { auth.signOut(); location.reload(); }
 
-        // CANVAS BACKGROUND (PARTÍCULAS)
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let pts = [];
-        function initBg() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            pts = [];
-            for(let i=0; i<100; i++) pts.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, size: Math.random()*2 });
-            animate();
+        // PERFIL
+        function openSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('hidden');
+            const user = auth.currentUser;
+            document.getElementById('preview-avatar').src = user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.uid}`;
+            document.getElementById('set-display-name').value = user.displayName;
         }
-        function animate() {
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(255,255,255,0.1)";
-            pts.forEach(p => {
-                p.x += p.vx; p.y += p.vy;
-                if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-            });
-            requestAnimationFrame(animate);
+
+        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+        async function saveProfile() {
+            const user = auth.currentUser;
+            const newName = document.getElementById('set-display-name').value;
+            const newPhoto = document.getElementById('set-avatar-url').value;
+            await user.updateProfile({ displayName: newName, photoURL: newPhoto || user.photoURL });
+            location.reload();
+        }
+
+        // SIDEBAR MOBILE
+        function toggleSidebar(open) {
+            const side = document.getElementById('sidebar');
+            side.style.transform = open ? 'translateX(0)' : 'translateX(-100%)';
+            if (window.innerWidth > 768) side.style.transform = 'none';
         }
 
         // CHAT ENGINE
-        let chats = JSON.parse(localStorage.getItem('eclipse_v21')) || [];
+        let chats = JSON.parse(localStorage.getItem('eclipse_v22')) || [];
         let currentId = null;
 
-        function openChat() {
-            document.getElementById('landing').style.display = 'none';
-            document.getElementById('chat-ui').style.display = 'flex';
+        function initApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-main').classList.remove('hidden');
+            const user = auth.currentUser;
+            document.getElementById('display-name').innerText = user.displayName;
+            document.getElementById('user-avatar').src = user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.uid}`;
+            renderList();
             if(chats.length > 0) switchChat(chats[0].id); else newChat();
         }
 
         function newChat() {
             const id = Date.now();
             const hour = new Date().getHours();
-            const msg = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-            chats.unshift({ id, title: "Sessão Alpha", messages: [{ role: 'model', parts: [{ text: `${msg}, Administrador. Terminal pronto para instruções.` }] }] });
+            const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+            chats.unshift({ id, title: "Nova conversa", messages: [{ role: 'model', parts: [{ text: `${greet}, ${auth.currentUser.displayName}. Como posso ajudar hoje?` }] }] });
             currentId = id; save(); renderList(); renderMsgs();
         }
 
         async function handleSend() {
             const input = document.getElementById('user-input');
-            const val = input.value.trim();
-            if(!val) return;
-            const active = chats.find(c => c.id === currentId);
-            if(active.messages.length <= 1) active.title = val.substring(0, 15).toUpperCase();
-            active.messages.push({ role: 'user', parts: [{ text: val }] });
+            const text = input.value.trim();
+            if(!text) return;
+
+            const chat = chats.find(c => c.id === currentId);
+            if(chat.messages.length <= 1) chat.title = text.substring(0, 20);
+            chat.messages.push({ role: 'user', parts: [{ text }] });
             input.value = ''; renderMsgs();
-            const load = createLoader();
+
+            const load = showLoader();
             try {
-                const res = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: active.messages}) });
+                const res = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: chat.messages}) });
                 const data = await res.json();
                 load.remove();
-                active.messages.push({ role: 'model', parts: [{ text: data.reply }] });
+                chat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
                 save(); renderMsgs(); renderList();
-            } catch(e) { load.innerText = "CRITICAL ERROR: API OFFLINE"; }
+            } catch(e) { load.innerText = "Erro ao processar."; }
         }
 
         function renderMsgs() {
@@ -245,40 +237,41 @@
             active.messages.forEach(m => {
                 const isB = m.role === 'model';
                 const div = document.createElement('div');
-                div.className = `flex flex-col ${isB ? 'items-start' : 'items-end'}`;
+                div.className = `flex ${isB ? 'justify-start' : 'justify-end'} fade-in`;
                 div.innerHTML = `
-                    <div class="max-w-[80%] ${isB ? 'os-window p-6' : 'bg-white text-black p-4 rounded-2xl'}">
-                        <span class="text-[8px] font-black uppercase mb-2 block opacity-50">${isB ? 'Eclipse OS' : 'Admin'}</span>
-                        <div class="text-sm leading-relaxed">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
+                    <div class="max-w-[85%] md:max-w-[70%] ${isB ? 'bg-white/5 rounded-3xl p-6' : 'bg-white text-black rounded-3xl p-4 px-6'}">
+                        <p class="text-[10px] font-bold uppercase opacity-40 mb-2">${isB ? 'Eclipse' : 'Você'}</p>
+                        <div class="text-sm md:text-base leading-relaxed">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
                     </div>`;
                 flow.appendChild(div);
             });
             flow.scrollTop = flow.scrollHeight;
-            hljs.highlightAll();
         }
 
         function renderList() {
-            const list = document.getElementById('chat-list'); list.innerHTML = '';
+            const list = document.getElementById('chat-history'); list.innerHTML = '';
             chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `p-4 rounded-xl cursor-none transition ${c.id === currentId ? 'bg-white text-black font-black' : 'hover:bg-white/5 text-gray-500'}`;
+                d.className = `p-4 rounded-2xl cursor-pointer text-sm transition ${c.id === currentId ? 'bg-white/10 text-white font-bold' : 'text-gray-500 hover:bg-white/5'}`;
                 d.onclick = () => switchChat(c.id);
-                d.innerHTML = `<div class="flex justify-between items-center text-[10px]"><span>${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})">×</span></div>`;
+                d.innerHTML = `<div class="flex justify-between items-center"><span class="truncate pr-2">${c.title}</span><button onclick="event.stopPropagation(); delChat(${c.id})" class="opacity-30 hover:opacity-100">✕</button></div>`;
                 list.appendChild(d);
             });
         }
 
-        function createLoader() {
-            const d = document.createElement('div'); d.className = 'text-center p-10 mono text-[10px] animate-pulse opacity-50'; d.innerText = ">>> DATA_SYNC_IN_PROGRESS...";
+        function showLoader() {
+            const d = document.createElement('div'); d.className = 'text-center text-xs text-gray-500 animate-pulse py-4'; d.innerText = "Eclipse está processando...";
             document.getElementById('chat-flow').appendChild(d);
             return d;
         }
 
-        function switchChat(id) { currentId = id; renderList(); renderMsgs(); }
-        function deleteChat(id) { chats = chats.filter(c => c.id !== id); currentId = chats[0]?.id; save(); renderList(); renderMsgs(); }
-        function save() { localStorage.setItem('eclipse_v21', JSON.stringify(chats)); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function switchChat(id) { currentId = id; renderList(); renderMsgs(); if(window.innerWidth < 768) toggleSidebar(false); }
+        function delChat(id) { chats = chats.filter(c => c.id !== id); currentId = chats[0]?.id; save(); renderList(); renderMsgs(); }
+        function save() { localStorage.setItem('eclipse_v22', JSON.stringify(chats)); }
         document.getElementById('user-input').onkeydown = (e) => { if(e.key === 'Enter') handleSend(); };
+        
+        // Mantém logado
+        auth.onAuthStateChanged(user => { if(user) initApp(); });
     </script>
 </body>
 </html>
