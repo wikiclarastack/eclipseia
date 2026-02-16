@@ -2,14 +2,13 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
     const { messages, modelType, userName } = req.body;
-    const manutencaoAtiva = true; 
+    const manutencaoAtiva = true;
 
     if (modelType === 'waver' && manutencaoAtiva) {
-        return res.status(503).json({ reply: "O motor Eclipse Waver está em manutenção." });
+        return res.status(503).json({ reply: "O motor Eclipse Waver está em manutenção técnica no momento." });
     }
 
-    // A IA agora sabe o nome do usuário através do prompt de sistema
-    const SYSTEM_PROMPT = `${process.env.SYSTEM_PROMPT || "Você é a Eclipse IA."} O nome do usuário é ${userName || 'Usuário'}. Trate-o por esse nome de forma profissional.`;
+    const SYSTEM_PROMPT = `${process.env.SYSTEM_PROMPT || "Você é a Eclipse IA."} O nome do usuário é ${userName}. Sempre que possível, use o nome dele para tornar a conversa próxima.`;
 
     try {
         let apiUrl, apiKey, body;
@@ -43,6 +42,6 @@ export default async function handler(req, res) {
         const reply = modelType === 'waver' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
         res.status(200).json({ reply });
     } catch (error) {
-        res.status(500).json({ reply: "Falha na comunicação." });
+        res.status(500).json({ reply: "Falha na conexão com o motor de inteligência." });
     }
 }
