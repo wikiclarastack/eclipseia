@@ -3,269 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA </title>
+    <title>Eclipse IA | v16</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { scroll-behavior: smooth; margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; }
         
-        #bg-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+        canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-        /* GLOBO 3D INTERATIVO */
-        .globe-container { position: relative; width: 350px; height: 350px; margin: 40px auto; transform-style: preserve-3d; transition: 0.5s ease; }
-        .globe-container:hover { transform: scale(1.1) rotate(5deg); }
-        .globe-sphere { 
-            position: absolute; width: 100%; height: 100%; border-radius: 50%; 
+        /* GLOBO INTERATIVO MELHORADO */
+        .globe-box { width: 300px; height: 300px; margin: 20px auto; position: relative; perspective: 1000px; cursor: grab; }
+        .globe-box:active { cursor: grabbing; }
+        .globe-core { 
+            width: 100%; height: 100%; border-radius: 50%; 
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/1024px-Blue_Marble_2002.png');
-            background-size: 200% 100%;
-            box-shadow: inset -40px -40px 100px #000, 0 0 40px rgba(255,255,255,0.1);
-            animation: moveGlobe 25s linear infinite;
+            background-size: 210% 100%;
+            box-shadow: inset -30px -30px 60px #000, 0 0 30px rgba(255,255,255,0.05);
+            animation: globeSpin 40s linear infinite;
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        @keyframes moveGlobe { from { background-position: 0 0; } to { background-position: 200% 0; } }
+        .globe-box:hover .globe-core { transform: scale(1.1); animation-play-state: paused; }
+        @keyframes globeSpin { from { background-position: 0 0; } to { background-position: 200% 0; } }
 
-        /* UI ELEMENTS */
-        .sidebar { background: #050505; width: 280px; border-right: 1px solid #111; height: 100vh; z-index: 2000; position: fixed; left: -280px; transition: 0.4s; }
-        .sidebar.open { left: 0; }
-        
-        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 1000; position: fixed; inset: 0; }
-        
-        .chat-card { cursor: pointer; padding: 15px; margin-bottom: 8px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; transition: 0.2s; }
-        .chat-card.active { background: #fff; color: #000; }
+        /* NOVOS COMPONENTES DE CHAT */
+        #chat-interface { display: none; height: 100vh; width: 100vw; flex-direction: column; background: #000; position: fixed; inset: 0; z-index: 50; }
+        .message-bubble { animation: slideUp 0.4s ease-out forwards; opacity: 0; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .msg-container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; }
-        
-        .btn-main { background: #fff; color: #000; font-weight: 800; padding: 18px 45px; border-radius: 100px; text-transform: uppercase; font-size: 11px; transition: 0.3s; }
-        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,255,255,0.2); }
+        .sidebar { position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: #050505; border-right: 1px solid #111; z-index: 100; transition: 0.3s ease; }
+        .sidebar.active { left: 0; }
 
-        pre { background: #080808 !important; border: 1px solid #111; border-radius: 12px; padding: 20px; position: relative; margin: 15px 0; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; font-size: 9px; background: #1a1a1a; color: #fff; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        pre { background: #080808 !important; border: 1px solid #1a1a1a; padding: 1.5rem; border-radius: 12px; margin: 1rem 0; position: relative; }
+        .copy-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; background: #222; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
-<body class="flex">
+<body class="flex flex-col">
 
-    <canvas id="bg-canvas"></canvas>
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-[1999] hidden" onclick="toggleSidebar()"></div>
+    <canvas id="stars"></canvas>
 
-    <aside id="sidebar" class="sidebar flex flex-col p-8">
-        <h2 class="text-white font-black text-2xl mb-12">ECLIPSE</h2>
-        <button onclick="createNewChat()" class="w-full py-4 bg-white text-black font-black text-[10px] uppercase rounded-xl mb-8">Nova Conversa</button>
-        <div id="chat-list" class="flex-1 overflow-y-auto space-y-3"></div>
-    </aside>
+    <div id="landing" class="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-6">
+        <h1 class="text-8xl md:text-[12rem] font-extrabold tracking-tighter mb-4">ECLIPSE</h1>
+        <p class="text-gray-500 uppercase tracking-[0.8em] text-[10px] mb-12">Global Intelligence System</p>
+        <button onclick="initSystem()" class="bg-white text-black px-12 py-5 font-black text-xs rounded-full hover:scale-110 transition-all">CONECTAR</button>
+        <button onclick="document.getElementById('stats').scrollIntoView()" class="mt-20 text-[9px] text-gray-700 font-bold uppercase tracking-widest">Ver Mapa de Calor ↓</button>
+    </div>
 
-    <main id="main-content" class="flex-1 h-screen overflow-y-auto relative z-10">
-        
-        <div id="landing-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <h1 class="text-7xl md:text-[10rem] font-black tracking-tighter mb-10">ECLIPSE</h1>
-            <button onclick="startApp()" class="btn-main">Iniciar Agora</button>
-            <button onclick="document.getElementById('about-section').scrollIntoView()" class="mt-12 text-[9px] text-gray-700 font-bold uppercase tracking-[0.5em]">Global Usage ↓</button>
+    <section id="stats" class="relative z-10 min-h-screen flex flex-col items-center justify-center bg-[#020202] py-20">
+        <div class="globe-box">
+            <div class="globe-core"></div>
+        </div>
+        <div class="max-w-2xl text-center px-6">
+            <h2 class="text-4xl font-black mb-8 uppercase">Brasil & EUA</h2>
+            <p class="text-gray-500 text-sm leading-loose uppercase">
+                A Eclipse processa dados globalmente. Atualmente, o <span class="text-white">Brasil</span> representa o maior crescimento em automação, enquanto os <span class="text-white">Estados Unidos</span> detêm a maior infraestrutura de nós ativos.
+            </p>
+        </div>
+    </section>
+
+    <div id="chat-interface">
+        <header class="p-5 border-b border-white/5 flex justify-between items-center bg-black/80 backdrop-blur-md">
+            <button onclick="toggleSidebar()" class="text-[10px] font-black uppercase border border-white/10 px-5 py-2 rounded-lg">Sessões</button>
+            <span class="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Eclipse Engine v16</span>
+            <button onclick="location.reload()" class="text-[10px] font-black uppercase text-red-500">Sair</button>
+        </header>
+
+        <div id="chat-scroller" class="flex-1 overflow-y-auto">
+            <div id="msg-feed" class="max-w-3xl mx-auto py-10 px-6 space-y-12">
+                </div>
         </div>
 
-        <section id="about-section" class="min-h-screen flex flex-col items-center justify-center p-12 bg-[#020202] border-t border-white/5">
-            <div class="globe-container">
-                <div class="globe-sphere"></div>
-            </div>
-            
-            <div class="max-w-4xl text-center">
-                <h3 class="text-3xl font-black mb-10 uppercase tracking-widest">Atividade Mundial</h3>
-                <div class="grid md:grid-cols-2 gap-10">
-                    <div class="p-8 border border-white/5 rounded-3xl bg-white/[0.01] hover:border-white/20 transition">
-                        <div class="flex items-center gap-3 mb-4 justify-center">
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <h4 class="font-black uppercase text-sm">Brasil (Crescimento 200%)</h4>
-                        </div>
-                        <p class="text-gray-500 text-xs uppercase">Comunidade brasileira lidera o uso para automação e scripts de alto nível.</p>
-                    </div>
-                    <div class="p-8 border border-white/5 rounded-3xl bg-white/[0.01] hover:border-white/20 transition">
-                        <div class="flex items-center gap-3 mb-4 justify-center">
-                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                            <h4 class="font-black uppercase text-sm">EUA (Maior Tráfego)</h4>
-                        </div>
-                        <p class="text-gray-500 text-xs uppercase">Os usuários norte-americanos representam 45% da nossa carga atual de processamento.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div id="chat-ui">
-            <header class="p-6 border-b border-white/5 flex justify-between items-center bg-black">
-                <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase border border-white/10 px-6 py-3 rounded-xl hover:bg-white/5 transition">Menu</button>
-                <div class="text-[10px] font-black text-gray-800 tracking-[0.5em] uppercase">Eclipse Stable Interface</div>
-                <button onclick="location.reload()" class="text-gray-500 font-bold text-[10px] uppercase">Reset</button>
-            </header>
-            
-            <div id="chat-flow" class="flex-1 overflow-y-auto">
-                <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center p-6">
-                    <h2 class="text-4xl md:text-5xl font-black mb-8 tracking-tighter">O que vamos criar hoje?</h2>
-                    <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="setPrompt('Gere um código Python')" class="px-6 py-3 border border-white/10 rounded-full text-[9px] font-black uppercase hover:bg-white hover:text-black transition">Python Dev</button>
-                        <button onclick="setPrompt('Explique redes neurais')" class="px-6 py-3 border border-white/10 rounded-full text-[9px] font-black uppercase hover:bg-white hover:text-black transition">Neural Explainer</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="p-6 md:p-12">
-                <div class="max-w-3xl mx-auto flex gap-4 bg-[#0a0a0a] p-2 border border-white/10 rounded-2xl focus-within:border-white/40 transition">
-                    <input id="user-input" type="text" placeholder="Envie sua mensagem..." class="flex-1 bg-transparent py-4 px-6 outline-none text-sm text-white">
-                    <button onclick="handleSend()" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-xl hover:bg-gray-200 transition">Enviar</button>
-                </div>
+        <div class="p-6 bg-gradient-to-t from-black via-black to-transparent">
+            <div class="max-w-3xl mx-auto relative">
+                <input id="prompt-input" type="text" placeholder="Digite seu comando..." class="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-white/40 transition-all text-sm">
+                <button onclick="send()" class="absolute right-3 top-2.5 bg-white text-black px-6 py-2.5 rounded-xl font-black text-[10px] uppercase">Enviar</button>
             </div>
         </div>
-    </main>
+    </div>
+
+    <div id="sidebar" class="sidebar p-8">
+        <h3 class="text-xs font-black uppercase text-gray-500 mb-8">Conversas Recentes</h3>
+        <button onclick="newSession()" class="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase mb-6 hover:bg-white hover:text-black transition">+ Nova Conversa</button>
+        <div id="session-list" class="space-y-2"></div>
+    </div>
 
     <script>
-        // FUNDO INTERATIVO (Partículas que seguem o mouse)
-        const canvas = document.getElementById('bg-canvas');
+        // 1. FUNDO INTERATIVO (Starfield + Mouse)
+        const canvas = document.getElementById('stars');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        let mouse = { x: null, y: null };
+        let pts = [];
+        let mouse = { x: -100, y: -100 };
 
-        function initBg() {
+        function initStars() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<80; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, size: 1.5 });
+            pts = [];
+            for(let i=0; i<100; i++) pts.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.5, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 });
         }
-        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
-        function animateBg() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, i) => {
+        window.onmousemove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+        function draw() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            pts.forEach(p => {
                 p.x += p.vx; p.y += p.vy;
-                if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+                if(p.x<0 || p.x>canvas.width) p.vx *= -1;
+                if(p.y<0 || p.y>canvas.height) p.vy *= -1;
                 
-                ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-
-                // Linhas de conexão
-                for(let j=i; j<particles.length; j++) {
-                    let dx = p.x - particles[j].x; let dy = p.y - particles[j].y;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist < 100) {
-                        ctx.strokeStyle = `rgba(255,255,255,${0.1 - dist/1000})`;
-                        ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
-                    }
+                let dx = mouse.x - p.x; let dy = mouse.y - p.y;
+                let d = Math.sqrt(dx*dx + dy*dy);
+                if(d < 150) {
+                    ctx.strokeStyle = `rgba(255,255,255,${1 - d/150})`;
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
                 }
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
             });
-            requestAnimationFrame(animateBg);
+            requestAnimationFrame(draw);
         }
-        initBg(); animateBg();
+        initStars(); draw();
 
-        // CHAT ENGINE
-        let chats = JSON.parse(localStorage.getItem('eclipse_v15')) || [];
-        let currentId = null;
+        // 2. MOTOR DO CHAT
+        let sessions = JSON.parse(localStorage.getItem('ec_v16')) || [];
+        let currentIdx = -1;
 
-        function startApp() {
-            document.getElementById('landing-screen').style.display = 'none';
-            document.getElementById('about-section').style.display = 'none';
-            document.getElementById('chat-ui').style.display = 'flex';
-            if(chats.length > 0) switchChat(chats[0].id);
-            else createNewChat();
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        function initSystem() {
+            document.getElementById('landing').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('chat-interface').style.display = 'flex';
+            if(sessions.length === 0) newSession();
+            else loadSession(0);
         }
 
-        function createNewChat() {
-            const id = Date.now();
-            chats.unshift({ id, title: 'Chat ' + (chats.length + 1), messages: [] });
-            currentId = id;
-            save(); renderChatList(); renderMessages();
-            if(window.innerWidth < 768) toggleSidebar();
+        function newSession() {
+            const s = { id: Date.now(), title: "Nova Conversa", msgs: [] };
+            sessions.unshift(s);
+            currentIdx = 0;
+            updateUI();
+            if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
         }
 
-        function switchChat(id) {
-            currentId = id;
-            renderChatList();
-            renderMessages();
-            if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
-        }
-
-        function renderChatList() {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = '';
-            chats.forEach(c => {
-                const div = document.createElement('div');
-                div.className = `chat-card flex justify-between items-center ${c.id === currentId ? 'active' : ''}`;
-                div.onclick = () => switchChat(c.id);
-                div.innerHTML = `<span class="text-[10px] uppercase font-bold truncate pr-4">${c.title}</span><button onclick="event.stopPropagation(); deleteChat(${c.id})">✕</button>`;
-                list.appendChild(div);
-            });
-        }
-
-        function deleteChat(id) {
-            chats = chats.filter(c => c.id !== id);
-            currentId = chats.length > 0 ? chats[0].id : null;
-            save(); renderChatList(); renderMessages();
-        }
-
-        function handleSend() {
-            const input = document.getElementById('user-input');
+        function send() {
+            const input = document.getElementById('prompt-input');
             const val = input.value.trim();
-            if(!val || !currentId) return;
+            if(!val) return;
 
-            const chat = chats.find(c => c.id === currentId);
-            if(chat.messages.length === 0) chat.title = val.substring(0, 15);
+            if(sessions[currentIdx].msgs.length === 0) sessions[currentIdx].title = val.substring(0, 20);
             
-            chat.messages.push({ role: 'user', text: val });
+            sessions[currentIdx].msgs.push({ role: 'user', text: val });
             input.value = '';
-            renderMessages();
+            renderMsgs();
 
-            // Resposta Automática
+            // Resposta Simulada
             const loader = document.createElement('div');
-            loader.className = 'py-10 opacity-30 text-[9px] uppercase font-black tracking-widest msg-container animate-pulse';
-            loader.innerText = 'Eclipse está processando...';
-            document.getElementById('chat-flow').appendChild(loader);
+            loader.className = 'text-[9px] font-black uppercase tracking-widest text-gray-700 animate-pulse px-6';
+            loader.innerText = 'Processando...';
+            document.getElementById('msg-feed').appendChild(loader);
 
             setTimeout(() => {
                 loader.remove();
-                chat.messages.push({ role: 'model', text: "Comando executado com sucesso.\n\n```python\nprint('Eclipse v15: Online e Funcional')\n```" });
-                save(); renderMessages();
-            }, 800);
+                sessions[currentIdx].msgs.push({ role: 'bot', text: "Eclipse v16 retornou o processamento.\n\n```lua\nprint('System Online')\n```" });
+                save(); renderMsgs();
+            }, 700);
         }
 
-        function renderMessages() {
-            const flow = document.getElementById('chat-flow');
-            const welcome = document.getElementById('welcome-area');
-            const chat = chats.find(c => c.id === currentId);
-
-            flow.innerHTML = '';
-            if(!chat || chat.messages.length === 0) {
-                flow.appendChild(welcome);
-                welcome.style.display = 'flex';
-                return;
-            }
-
-            welcome.style.display = 'none';
-            chat.messages.forEach(m => {
-                const isModel = m.role === 'model';
+        function renderMsgs() {
+            const feed = document.getElementById('msg-feed');
+            feed.innerHTML = '';
+            
+            sessions[currentIdx].msgs.forEach(m => {
                 const div = document.createElement('div');
-                div.className = `py-12 ${isModel ? 'bg-white/[0.02]' : ''}`;
-                div.innerHTML = `<div class="msg-container">
-                    <span class="text-[9px] font-black text-gray-700 uppercase mb-4 block">${isModel ? 'Eclipse IA' : 'Admin'}</span>
-                    <div class="text-[14px] text-gray-300 leading-relaxed">${isModel ? marked.parse(m.text) : m.text}</div>
-                </div>`;
-                flow.appendChild(div);
+                div.className = 'message-bubble';
+                const isBot = m.role === 'bot';
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-[9px] font-black text-gray-800 uppercase mb-3">${isBot ? 'Eclipse' : 'Admin'}</span>
+                        <div class="text-[15px] leading-relaxed text-gray-300">
+                            ${isBot ? marked.parse(m.text) : m.text}
+                        </div>
+                    </div>
+                `;
+                feed.appendChild(div);
             });
 
-            // Highlights & Copy
-            flow.querySelectorAll('pre code').forEach(c => {
+            feed.querySelectorAll('pre code').forEach(c => {
                 hljs.highlightElement(c);
-                const btn = document.createElement('button');
-                btn.className = 'copy-btn'; btn.innerText = 'Copiar';
-                btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'OK'; setTimeout(() => btn.innerText='Copiar', 2000); };
-                c.parentElement.appendChild(btn);
+                const tag = document.createElement('div');
+                tag.className = 'copy-tag'; tag.innerText = 'COPIAR';
+                tag.onclick = () => { navigator.clipboard.writeText(c.innerText); tag.innerText = 'OK'; setTimeout(()=>tag.innerText='COPIAR', 1000); };
+                c.parentElement.appendChild(tag);
             });
-            flow.scrollTop = flow.scrollHeight;
+            document.getElementById('chat-scroller').scrollTop = document.getElementById('chat-scroller').scrollHeight;
         }
 
-        function setPrompt(t) { document.getElementById('user-input').value = t; handleSend(); }
-        function save() { localStorage.setItem('eclipse_v15', JSON.stringify(chats)); }
-        document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
-        window.onresize = initBg;
+        function updateUI() {
+            const list = document.getElementById('session-list');
+            list.innerHTML = '';
+            sessions.forEach((s, i) => {
+                const b = document.createElement('div');
+                b.className = `p-4 rounded-xl cursor-pointer text-[10px] font-bold uppercase transition ${i === currentIdx ? 'bg-white text-black' : 'bg-white/5 text-gray-500'}`;
+                b.innerText = s.title;
+                b.onclick = () => loadSession(i);
+                list.appendChild(b);
+            });
+            renderMsgs();
+        }
+
+        function loadSession(i) { currentIdx = i; updateUI(); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        function save() { localStorage.setItem('ec_v16', JSON.stringify(sessions)); }
+        document.getElementById('prompt-input').onkeydown = (e) => { if(e.key === 'Enter') send(); };
     </script>
 </body>
 </html>
