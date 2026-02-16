@@ -7,38 +7,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
         * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; outline: none !important; }
         body { background: #000; color: #fff; height: 100dvh; overflow: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .btn-primary { background: #fff; color: #000; font-weight: 700; transition: 0.3s cubic-bezier(0.2, 0, 0, 1); }
-        .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
         
-        /* Notificações */
         #notification-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 12px 24px; border-radius: 16px; font-size: 13px; font-weight: 600; animation: toastIn 0.5s ease forwards; min-width: 250px; display: flex; align-items: center; justify-content: space-between; }
         @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Badges */
         .badge-new { background: #fff; color: #000; font-size: 8px; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 6px; }
-
-        /* Loader */
         .loader-dot { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="flex items-center justify-center">
 
     <div id="notification-container"></div>
 
-    <section id="auth-screen" class="w-full max-w-md p-8 glass rounded-[2.5rem] hidden">
+    <section id="auth-screen" class="w-full max-w-md p-8 glass rounded-[2.5rem]">
         <div id="login-form">
             <h1 class="text-5xl font-extrabold tracking-tighter mb-2">Eclipse</h1>
-            <p class="text-gray-500 mb-8 text-sm">Bem-vindo de volta ao sistema.</p>
+            <p class="text-gray-500 mb-8 text-sm">Acesse sua conta para continuar.</p>
             <div class="space-y-4">
                 <input id="login-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl glass">
                 <input id="login-pass" type="password" placeholder="Senha" class="w-full p-4 rounded-2xl glass">
@@ -48,8 +43,8 @@
         </div>
 
         <div id="register-form" class="hidden">
-            <h1 class="text-4xl font-extrabold tracking-tighter mb-2">Registro</h1>
-            <p class="text-gray-500 mb-8 text-sm">Crie seu perfil único.</p>
+            <h1 class="text-4xl font-extrabold tracking-tighter mb-2">Registro <span class="badge-new">NEW</span></h1>
+            <p class="text-gray-500 mb-8 text-sm">Crie seu perfil personalizado.</p>
             <div class="space-y-4">
                 <input id="reg-name" type="text" placeholder="Como devemos te chamar? (Obrigatório)" class="w-full p-4 rounded-2xl glass">
                 <input id="reg-email" type="email" placeholder="E-mail" class="w-full p-4 rounded-2xl glass">
@@ -68,10 +63,10 @@
             <div class="flex-1 px-4 space-y-2 overflow-y-auto" id="chat-list"></div>
             <div class="p-6 border-t border-white/5">
                 <div onclick="openSettings()" class="flex items-center gap-4 hover:bg-white/5 p-3 rounded-2xl cursor-pointer transition">
-                    <img id="user-avatar-ui" class="w-11 h-11 rounded-full border border-white/10 object-cover">
+                    <img id="user-avatar-ui" src="https://api.dicebear.com/7.x/shapes/svg?seed=Eclipse" class="w-11 h-11 rounded-full border border-white/10 object-cover">
                     <div class="flex-1 overflow-hidden">
-                        <p id="user-name-ui" class="text-sm font-bold truncate"></p>
-                        <p class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Painel de Ajustes</p>
+                        <p id="user-name-ui" class="text-sm font-bold truncate">Usuário</p>
+                        <p class="text-[9px] text-gray-500 font-black uppercase tracking-widest">Ajustes <span class="badge-new">NEW</span></p>
                     </div>
                 </div>
             </div>
@@ -81,37 +76,15 @@
             <div id="chat-flow" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-10"></div>
             <div class="p-6 md:p-12">
                 <div class="max-w-4xl mx-auto flex gap-3 glass p-2 rounded-[2.5rem]">
-                    <input id="user-input" type="text" placeholder="Qual o seu comando?" class="flex-1 bg-transparent py-4 px-6 text-sm">
+                    <input id="user-input" type="text" onkeydown="checkEnter(event)" placeholder="Digite sua mensagem..." class="flex-1 bg-transparent py-4 px-6 text-sm">
                     <button onclick="handleSend()" class="btn-primary px-10 py-4 rounded-full text-xs uppercase">Enviar</button>
                 </div>
             </div>
         </section>
 
-        <section id="intro-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-            <div class="w-full max-w-lg glass rounded-[3rem] p-10">
-                <span class="badge-new bg-blue-500 text-white ml-0 mb-4 inline-block">ATUALIZAÇÃO v23</span>
-                <h2 class="text-3xl font-black mb-6">Novas Funcionalidades</h2>
-                <div class="space-y-6 mb-10 text-gray-400 text-sm">
-                    <div class="flex gap-4">
-                        <div class="text-white">●</div>
-                        <p><b>Armazenamento Local:</b> Agora sua foto é salva direto no app, sem links externos.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="text-white">●</div>
-                        <p><b>Login Persistente:</b> Sua sessão fica ativa por tempo indeterminado.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="text-white">●</div>
-                        <p><b>Sistema de Toasts:</b> Notificações visuais melhoradas para erros e sucessos.</p>
-                    </div>
-                </div>
-                <button onclick="closeIntro()" class="btn-primary w-full py-5 rounded-3xl">Entendido</button>
-            </div>
-        </section>
-
         <section id="settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
             <div class="w-full max-w-sm glass rounded-[3rem] p-8">
-                <h3 class="text-2xl font-black italic mb-8">Configurações <span class="badge-new">NEW</span></h3>
+                <h3 class="text-2xl font-black italic mb-8">Configurações</h3>
                 <div class="flex flex-col items-center gap-6">
                     <div class="relative group">
                         <img id="settings-preview" class="w-24 h-24 rounded-full object-cover border-2 border-white/20">
@@ -121,76 +94,61 @@
                         </label>
                     </div>
                     <input id="set-name" type="text" placeholder="Nome de exibição" class="w-full p-4 rounded-2xl glass text-sm">
-                    <button onclick="saveProfile()" class="btn-primary w-full py-4 rounded-2xl">Salvar Mudanças</button>
-                    <button onclick="logout()" class="text-red-500 text-xs font-bold uppercase tracking-widest mt-4">Desconectar</button>
+                    <div class="flex flex-col w-full gap-2">
+                        <button onclick="saveProfile()" class="btn-primary w-full py-4 rounded-2xl">Aplicar</button>
+                        <button onclick="closeSettings()" class="w-full py-2 text-gray-500 text-xs font-bold uppercase tracking-widest">Cancelar</button>
+                    </div>
+                    <button onclick="logout()" class="text-red-500 text-xs font-bold uppercase tracking-widest mt-4">Sair</button>
                 </div>
             </div>
         </section>
     </main>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAsP3iDayVoX9LivuqBWMXpMbsidn5Fd-0",
-            authDomain: "fkaa-2e852.firebaseapp.com",
-            projectId: "fkaa-2e852",
-            storageBucket: "fkaa-2e852.firebasestorage.app",
-            messagingSenderId: "258882319543",
-            appId: "1:258882319543:web:d665c1adbc4a1479afc932"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        let base64Avatar = "";
+        let chats = JSON.parse(localStorage.getItem('eclipse_v24')) || [];
+        let currentId = null;
 
-        // PERSISTÊNCIA DE LOGIN
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-        // NOTIFICAÇÕES (TOASTS)
         function notify(msg, type = 'success') {
             const container = document.getElementById('notification-container');
             const div = document.createElement('div');
-            const colors = { success: 'bg-white text-black', error: 'bg-red-500 text-white', info: 'bg-blue-500 text-white' };
+            const colors = { success: 'bg-white text-black', error: 'bg-red-500 text-white' };
             div.className = `toast ${colors[type]}`;
             div.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="ml-4 opacity-50">✕</button>`;
             container.appendChild(div);
             setTimeout(() => div.remove(), 4000);
         }
 
-        // AUTH LOGIC
+        function checkEnter(e) { if(e.key === 'Enter') handleSend(); }
+
         function toggleAuth(showLogin) {
             document.getElementById('login-form').classList.toggle('hidden', !showLogin);
             document.getElementById('register-form').classList.toggle('hidden', showLogin);
         }
 
-        async function handleSignup() {
+        // Simulação de chamadas para seu Backend/Firebase (Gerencie via Environment Variables no servidor)
+        function handleSignup() {
             const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
-            const pass = document.getElementById('reg-pass').value;
-
-            if(!name) return notify("O nome é obrigatório!", "error");
-            if(pass.length < 6) return notify("Senha deve ter 6+ dígitos", "error");
-
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                await cred.user.updateProfile({ displayName: name });
-                notify("Conta criada com sucesso!");
-                localStorage.setItem('first_access', 'true');
-                initApp();
-            } catch(e) { notify(e.message, "error"); }
+            if(!name) return notify("Nome obrigatório!", "error");
+            notify("Registro simulado. Conecte ao seu backend.");
+            enterApp(name);
         }
 
-        async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-                notify("Acesso autorizado.");
-                initApp();
-            } catch(e) { notify("E-mail ou senha incorretos.", "error"); }
+        function handleLogin() {
+            notify("Login simulado.");
+            enterApp("Usuário");
         }
 
-        function logout() { auth.signOut(); location.reload(); }
+        function enterApp(name) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-main').classList.remove('hidden');
+            document.getElementById('user-name-ui').innerText = name;
+            renderList();
+            if(chats.length > 0) switchChat(chats[0].id); else newChat();
+        }
 
-        // FILE HANDLING (AVATAR LOCAL)
-        let base64Avatar = "";
+        function logout() { location.reload(); }
+
         function previewFile() {
             const file = document.getElementById('avatar-upload').files[0];
             const reader = new FileReader();
@@ -201,45 +159,18 @@
             if (file) reader.readAsDataURL(file);
         }
 
-        async function saveProfile() {
-            const user = auth.currentUser;
-            const newName = document.getElementById('set-name').value;
-            if(!newName) return notify("Nome não pode ser vazio", "error");
-            
-            await user.updateProfile({ 
-                displayName: newName, 
-                photoURL: base64Avatar || user.photoURL 
-            });
-            notify("Perfil atualizado!");
-            location.reload();
-        }
-
-        // CHAT ENGINE
-        let chats = JSON.parse(localStorage.getItem('eclipse_v23')) || [];
-        let currentId = null;
-
-        function initApp() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-main').classList.remove('hidden');
-            
-            const user = auth.currentUser;
-            document.getElementById('user-name-ui').innerText = user.displayName;
-            document.getElementById('user-avatar-ui').src = user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.uid}`;
-            
-            if(localStorage.getItem('first_access')) {
-                document.getElementById('intro-modal').classList.remove('hidden');
-                localStorage.removeItem('first_access');
-            }
-
-            renderList();
-            if(chats.length > 0) switchChat(chats[0].id); else newChat();
+        function saveProfile() {
+            const name = document.getElementById('set-name').value;
+            if(!name) return notify("Nome vazio!", "error");
+            document.getElementById('user-name-ui').innerText = name;
+            if(base64Avatar) document.getElementById('user-avatar-ui').src = base64Avatar;
+            closeSettings();
+            notify("Perfil Atualizado!");
         }
 
         function newChat() {
             const id = Date.now();
-            const hour = new Date().getHours();
-            const greet = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-            chats.unshift({ id, title: "Nova Sessão", messages: [{ role: 'model', parts: [{ text: `${greet}, ${auth.currentUser.displayName}. O que faremos hoje?` }] }] });
+            chats.unshift({ id, title: "Nova Conversa", messages: [{ role: 'model', parts: [{ text: "Como posso ajudar hoje?" }] }] });
             currentId = id; save(); renderList(); renderMsgs();
         }
 
@@ -248,9 +179,10 @@
             const val = input.value.trim();
             if(!val) return;
             const chat = chats.find(c => c.id === currentId);
-            if(chat.messages.length <= 1) chat.title = val.substring(0, 15).toUpperCase();
+            if(chat.messages.length <= 1) chat.title = val.substring(0, 15);
             chat.messages.push({ role: 'user', parts: [{ text: val }] });
             input.value = ''; renderMsgs();
+            
             const load = showLoader();
             try {
                 const res = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: chat.messages}) });
@@ -258,7 +190,7 @@
                 load.remove();
                 chat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
                 save(); renderMsgs(); renderList();
-            } catch(e) { load.innerText = "Falha no processamento."; }
+            } catch(e) { load.innerText = "Conecte seu endpoint de API."; }
         }
 
         function renderMsgs() {
@@ -268,7 +200,7 @@
                 const isB = m.role === 'model';
                 const div = document.createElement('div');
                 div.className = `flex ${isB ? 'justify-start' : 'justify-end'} fade-in`;
-                div.innerHTML = `<div class="max-w-[85%] md:max-w-[70%] ${isB ? 'glass p-6 rounded-3xl' : 'bg-white text-black p-4 px-6 rounded-3xl shadow-xl'}"><p class="text-[9px] font-black uppercase opacity-40 mb-2">${isB ? 'Eclipse' : 'Admin'}</p><div class="text-sm md:text-base">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div></div>`;
+                div.innerHTML = `<div class="max-w-[85%] md:max-w-[70%] ${isB ? 'glass p-6 rounded-3xl' : 'bg-white text-black p-4 px-6 rounded-3xl shadow-xl'}"><p class="text-[9px] font-black uppercase opacity-40 mb-2">${isB ? 'Eclipse' : 'Você'}</p><div class="text-sm md:text-base">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div></div>`;
                 flow.appendChild(div);
             });
             flow.scrollTop = flow.scrollHeight;
@@ -287,17 +219,14 @@
 
         function openSettings() { 
             document.getElementById('settings-modal').classList.remove('hidden'); 
-            document.getElementById('settings-preview').src = auth.currentUser.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${auth.currentUser.uid}`;
-            document.getElementById('set-name').value = auth.currentUser.displayName;
+            document.getElementById('set-name').value = document.getElementById('user-name-ui').innerText;
+            document.getElementById('settings-preview').src = document.getElementById('user-avatar-ui').src;
         }
         function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
-        function closeIntro() { document.getElementById('intro-modal').classList.add('hidden'); }
-        function showLoader() { const d = document.createElement('div'); d.className = 'text-center text-[10px] loader-dot text-gray-500 font-bold uppercase'; d.innerText = "Eclipse está pensando..."; document.getElementById('chat-flow').appendChild(d); return d; }
+        function showLoader() { const d = document.createElement('div'); d.className = 'text-center text-[10px] loader-dot text-gray-500 font-bold uppercase py-4'; d.innerText = "Eclipse pensando..."; document.getElementById('chat-flow').appendChild(d); return d; }
         function switchChat(id) { currentId = id; renderList(); renderMsgs(); }
         function delChat(id) { chats = chats.filter(c => c.id !== id); currentId = chats[0]?.id; save(); renderList(); renderMsgs(); }
-        function save() { localStorage.setItem('eclipse_v23', JSON.stringify(chats)); }
-        
-        auth.onAuthStateChanged(user => { if(user) initApp(); else document.getElementById('auth-screen').classList.remove('hidden'); });
+        function save() { localStorage.setItem('eclipse_v24', JSON.stringify(chats)); }
     </script>
 </body>
 </html>
