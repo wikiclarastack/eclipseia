@@ -10,7 +10,7 @@ export default async function handler(req, res) {
         if (modelType === 'waver') {
             apiUrl = 'https://api.openai.com/v1/chat/completions';
             apiKey = process.env.OPENAI_API_KEY;
-            modelName = 'gpt-4o-mini'; 
+            modelName = 'gpt-5.2'; 
         } else {
             apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
             apiKey = process.env.GROQ_API_KEY;
