@@ -3,171 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA</title>
+    <title>Eclipse IA </title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; outline: none !important; }
-        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .btn-primary { background: #fff; color: #000; font-weight: 800; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,255,255,0.1); }
+        * { cursor: none !important; scroll-behavior: smooth; }
+        body { background: #000; color: #fff; height: 100dvh; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .btn-active { background: #fff !important; color: #000 !important; }
+        
+        #custom-cursor { position: fixed; width: 40px; height: 40px; border: 1px solid #fff; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; mix-blend-mode: difference; }
+        
+        .widget-node { animation: slideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+        @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .message-anim { animation: msgSlide 0.4s ease-out forwards; }
+        @keyframes msgSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.03); z-index: 999; pointer-events: none; animation: scan 4s linear infinite; }
+        @keyframes scan { from { top: -10%; } to { top: 110%; } }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .ai-glow { box-shadow: 0 0 60px rgba(255,255,255,0.03); }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center">
 
-    <section id="auth-screen" class="hidden w-full max-w-sm p-10 glass rounded-[3rem] ai-glow">
-        <h1 class="text-5xl font-black tracking-tighter mb-10 text-center italic">Eclipse</h1>
-        <div class="space-y-4">
-            <input id="auth-email" type="email" placeholder="Acesso ID" class="w-full p-4 rounded-2xl glass border-none text-center text-sm">
-            <input id="auth-pass" type="password" placeholder="Cipher" class="w-full p-4 rounded-2xl glass border-none text-center text-sm">
-            <button onclick="handleAuth('login')" class="btn-primary w-full p-5 rounded-2xl text-[10px] uppercase tracking-[0.2em]">Entrar</button>
-            <button onclick="handleAuth('signup')" class="w-full p-5 rounded-2xl glass font-bold text-[10px] uppercase tracking-[0.2em]">Criar Identidade</button>
+    <div id="custom-cursor"></div>
+    <div class="scanline"></div>
+
+    <main id="landing" class="relative z-10 flex flex-col items-center text-center p-6">
+        <div class="mb-6 px-4 py-1 glass rounded-full text-[8px] font-black tracking-[0.5em] uppercase text-zinc-500">Neural Network Active</div>
+        <h1 class="text-[12vw] font-black tracking-tighter italic mb-8 select-none">ECLIPSE</h1>
+        
+        <div class="flex gap-4 mb-20">
+            <button onclick="startApp()" class="px-12 py-6 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-full hover:scale-110 transition">Entrar no Core</button>
+            <button class="px-12 py-6 glass font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-white/10 transition">Docs</button>
         </div>
-        <p id="auth-msg" class="text-[9px] text-center mt-6 text-zinc-500 font-bold uppercase tracking-widest min-h-[12px]"></p>
-    </section>
 
-    <main id="app-main" class="hidden fixed inset-0 flex flex-col bg-[#010101]">
-        <header class="p-8 flex justify-between items-center z-50">
-            <div class="flex items-center gap-4">
-                <h2 class="text-2xl font-black italic tracking-tighter">Eclipse Engine</h2>
-                <div class="text-[8px] px-3 py-1 bg-white/5 border border-white/10 rounded-full font-black uppercase tracking-[0.2em]">Core v39</div>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="toggleSocial()" class="p-4 glass rounded-2xl hover:bg-white/5 transition">👥</button>
-                <button onclick="auth.signOut()" class="p-4 glass rounded-2xl hover:bg-red-500/10 transition">✕</button>
-            </div>
-        </header>
+        <div class="flex gap-20">
+            <div class="text-left"><div class="text-3xl font-black">99.9%</div><div class="text-[8px] uppercase text-zinc-500 font-bold">Uptime</div></div>
+            <div class="text-left"><div class="text-3xl font-black">2.4ms</div><div class="text-[8px] uppercase text-zinc-500 font-bold">Neural Lag</div></div>
+            <div class="text-left"><div class="text-3xl font-black">256bit</div><div class="text-[8px] uppercase text-zinc-500 font-bold">AES Proxy</div></div>
+        </div>
+    </main>
 
-        <section class="flex-1 flex flex-col max-w-5xl mx-auto w-full relative">
-            <div id="chat-flow" class="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 no-scrollbar"></div>
-            
-            <div id="social-panel" class="hidden absolute top-0 right-0 w-80 h-full glass z-[60] p-6 animate-in slide-in-from-right duration-300">
-                <h3 class="text-lg font-black mb-6 italic text-center">Social Engine</h3>
-                <input id="s-input" type="text" placeholder="E-mail do alvo..." class="w-full p-4 rounded-xl glass text-xs mb-4 border-none">
-                <button onclick="searchUser()" class="btn-primary w-full p-3 rounded-xl text-[9px] uppercase">Localizar</button>
-                <div id="s-results" class="mt-6 space-y-2"></div>
-                <div id="dm-list" class="mt-10 pt-6 border-t border-white/5 space-y-2"></div>
+    <div id="chat-ui" class="hidden fixed inset-0 flex bg-[#020202]">
+        
+        <aside id="sidebar" class="w-80 glass border-r border-white/5 flex flex-col p-6 z-50">
+            <div class="mb-10 flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest italic">Recentes</span>
             </div>
+            <button onclick="createNewChat()" class="w-full py-4 mb-6 bg-white/5 border border-white/10 text-[9px] font-black uppercase rounded-xl hover:bg-white hover:text-black transition">+ Novo Ciclo</button>
+            <div id="chat-list" class="flex-1 space-y-2 overflow-y-auto no-scrollbar"></div>
+        </aside>
 
-            <div class="p-8 md:p-12">
-                <div class="glass p-2 rounded-[2.5rem] flex gap-3 ai-glow">
-                    <input id="u-input" type="text" onkeydown="if(event.key==='Enter') send()" placeholder="Comando para a IA..." class="flex-1 bg-transparent py-5 px-8 text-sm border-none focus:ring-0">
-                    <button onclick="send()" class="btn-primary px-12 py-5 rounded-full text-[10px] font-black uppercase tracking-widest">Executar</button>
+        <section class="flex-1 flex flex-col relative">
+            <header class="p-8 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-md">
+                <div class="flex gap-4">
+                    <button onclick="setMode('eco')" id="mode-eco" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Focado</button>
+                    <button onclick="setMode('creative')" id="mode-creative" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Criativo</button>
+                    <button onclick="setMode('dev')" id="mode-dev" class="mode-btn px-4 py-2 glass rounded-lg text-[8px] font-black uppercase tracking-tighter">Dev</button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="ping" class="mono text-[8px] text-zinc-500">PING: 0ms</div>
+                    <button onclick="location.reload()" class="p-3 glass rounded-xl hover:bg-red-500/20 transition">✕</button>
+                </div>
+            </header>
+
+            <div id="chat-flow" class="flex-1 overflow-y-auto p-10 space-y-12 no-scrollbar scroll-smooth"></div>
+
+            <div class="p-10 bg-gradient-to-t from-black via-black to-transparent">
+                <div class="max-w-4xl mx-auto flex gap-3 p-2 glass rounded-[2.5rem] ai-glow">
+                    <input id="user-input" type="text" placeholder="Digite comandos ou perguntas..." class="flex-1 bg-transparent py-5 px-8 outline-none text-sm mono">
+                    <button onclick="handleSend()" class="bg-white text-black px-12 rounded-full font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition">Executar</button>
                 </div>
             </div>
         </section>
-    </main>
+
+        <aside class="w-80 glass border-l border-white/5 p-8 hidden xl:flex flex-col gap-8">
+            <div class="widget-node p-6 glass rounded-3xl">
+                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">Relógio Local</div>
+                <div id="clock" class="text-4xl font-black italic tracking-tighter">00:00:00</div>
+            </div>
+
+            <div class="widget-node p-6 glass rounded-3xl">
+                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">System Load</div>
+                <div class="space-y-4">
+                    <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div class="bg-white h-full" style="width: 45%"></div></div>
+                    <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden"><div class="bg-blue-500 h-full" style="width: 22%"></div></div>
+                </div>
+            </div>
+
+            <div class="widget-node p-6 glass rounded-3xl flex-1">
+                <div class="text-[8px] font-black text-zinc-600 uppercase mb-4 tracking-widest">Logs de Rede</div>
+                <div id="net-logs" class="mono text-[8px] text-zinc-500 space-y-1"></div>
+            </div>
+        </aside>
+    </div>
 
     <script>
-        const config = {
-            apiKey: "<<FIREBASE_API_KEY>>",
-            authDomain: "fkaa-2e852.firebaseapp.com",
-            projectId: "fkaa-2e852",
-            storageBucket: "fkaa-2e852.firebasestorage.app",
-            messagingSenderId: "258882319543",
-            appId: "1:258882319543:web:d665c1adbc4a1479afc932"
+        const cursor = document.getElementById('custom-cursor');
+        let chats = JSON.parse(localStorage.getItem('eclipse_v40')) || [];
+        let currentId = null;
+        let mode = 'eco';
+
+        // CURSOR & INTERATIVIDADE
+        window.onmousemove = (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            if(e.target.closest('button') || e.target.closest('input')) {
+                cursor.style.width = '80px'; cursor.style.height = '80px'; cursor.style.background = 'rgba(255,255,255,0.1)';
+            } else {
+                cursor.style.width = '40px'; cursor.style.height = '40px'; cursor.style.background = 'transparent';
+            }
         };
 
-        firebase.initializeApp(config);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        let chats = { ai: [], dms: [] };
-        let current = 'ai';
-
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('app-main').classList.remove('hidden');
-                load();
-            } else {
-                document.getElementById('auth-screen').classList.remove('hidden');
-                document.getElementById('app-main').classList.add('hidden');
+        // RELÓGIO E LOGS
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+            
+            const logs = document.getElementById('net-logs');
+            const lines = ["Incoming Packet...", "Auth Verified", "Node Sync: OK", "Data Encryption: AES-256", "Cache Purged"];
+            if(Math.random() > 0.8) {
+                const p = document.createElement('div');
+                p.innerText = `> ${lines[Math.floor(Math.random()*lines.length)]}`;
+                logs.prepend(p);
+                if(logs.children.length > 15) logs.lastChild.remove();
             }
-        });
+            document.getElementById('ping').innerText = `PING: ${Math.floor(Math.random()*15 + 2)}ms`;
+        }, 1000);
 
-        async function handleAuth(type) {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-pass').value;
-            const m = document.getElementById('auth-msg');
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('btn-active'));
+            document.getElementById(`mode-${m}`).classList.add('btn-active');
+        }
+
+        function startApp() {
+            document.getElementById('landing').classList.add('hidden');
+            document.getElementById('chat-ui').classList.remove('hidden');
+            setMode('eco');
+            if(chats.length > 0) switchChat(chats[0].id); else createNewChat();
+            renderChatList();
+        }
+
+        function createNewChat() {
+            const id = Date.now();
+            chats.unshift({ id, title: 'Nova Sessão', messages: [{ role: 'model', parts: [{ text: "**Eclipse v40 Absolute** online. Como posso processar seus dados hoje?" }] }] });
+            currentId = id; save(); renderChatList(); renderMessages();
+        }
+
+        async function handleSend() {
+            const input = document.getElementById('user-input');
+            const val = input.value.trim();
+            if(!val) return;
+
+            // COMANDOS INTERATIVOS
+            if(val === '/clear') { chats.find(c => c.id === currentId).messages = []; renderMessages(); input.value = ''; return; }
+            if(val === '/theme') { document.body.classList.toggle('invert'); input.value = ''; return; }
+
+            const activeChat = chats.find(c => c.id === currentId);
+            activeChat.messages.push({ role: 'user', parts: [{ text: val }] });
+            if(activeChat.title === 'Nova Sessão') activeChat.title = val.substring(0, 15).toUpperCase();
+            
+            input.value = ''; renderMessages();
+            const loader = createLoader();
+
             try {
-                if(type === 'signup') {
-                    const r = await auth.createUserWithEmailAndPassword(e, p);
-                    await db.collection('users').doc(r.user.uid).set({ email: e, name: e.split('@')[0] });
-                } else {
-                    await auth.signInWithEmailAndPassword(e, p);
-                }
-            } catch(err) { m.innerText = "Falha no Protocolo."; }
-        }
-
-        function send() {
-            const i = document.getElementById('u-input');
-            const v = i.value.trim();
-            if(!v) return;
-
-            const target = current === 'ai' ? chats.ai : chats.dms.find(d => d.id === current).msgs;
-            target.push({ r: 'u', c: v });
-            i.value = ''; render();
-
-            if(current === 'ai') {
+                // Aqui você ligaria com sua API
                 setTimeout(() => {
-                    target.push({ r: 'm', c: `**Eclipse Core**\n\nProcessando: \`${v}\`\n\nSistemas operacionais e estáveis. Protocolo v39 ativo.` });
-                    render(); save();
-                }, 600);
-            }
+                    loader.remove();
+                    activeChat.messages.push({ role: 'model', parts: [{ text: `Modo **${mode.toUpperCase()}** ativo. Processando solicitação...\n\nOtimização de dados para: \`${val}\` concluída com sucesso.` }] });
+                    save(); renderMessages(); renderChatList();
+                }, 1000);
+            } catch(e) { loader.innerText = "ERRO_DE_CONEXÃO"; }
         }
 
-        function render() {
-            const f = document.getElementById('chat-flow'); f.innerHTML = '';
-            const msgs = current === 'ai' ? chats.ai : chats.dms.find(d => d.id === current).msgs;
-            msgs.forEach(m => {
-                const isB = m.r === 'm';
+        function renderMessages() {
+            const flow = document.getElementById('chat-flow'); flow.innerHTML = '';
+            const chat = chats.find(c => c.id === currentId);
+            chat.messages.forEach(m => {
+                const isB = m.role === 'model';
+                const div = document.createElement('div');
+                div.className = `flex ${isB ? 'justify-start' : 'justify-end'} message-anim`;
+                div.innerHTML = `
+                    <div class="${isB ? 'glass border border-white/5 p-8' : 'bg-white text-black p-5 px-8'} rounded-[2rem] max-w-[80%]">
+                        <span class="text-[8px] font-black uppercase tracking-[0.3em] mb-4 block ${isB ? 'text-zinc-500' : 'text-zinc-400'}">${isB ? 'Eclipse Engine' : 'Admin'}</span>
+                        <div class="text-sm leading-relaxed mono">${isB ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
+                    </div>`;
+                flow.appendChild(div);
+            });
+            flow.scrollTop = flow.scrollHeight;
+        }
+
+        function createLoader() {
+            const d = document.createElement('div'); d.className = 'text-[9px] mono text-zinc-500 animate-pulse'; d.innerText = "> CALCULANDO_CORE_LOGIC...";
+            document.getElementById('chat-flow').appendChild(d);
+            return d;
+        }
+
+        function renderChatList() {
+            const l = document.getElementById('chat-list'); l.innerHTML = '';
+            chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `flex ${isB ? 'justify-start' : 'justify-end'} animate-in fade-in duration-300`;
-                d.innerHTML = `<div class="${isB ? 'glass p-8 border border-white/5' : 'bg-white text-black p-5 px-8'} rounded-[2.5rem] max-w-[85%] text-sm leading-relaxed">${isB ? marked.parse(m.c) : m.c}</div>`;
-                f.appendChild(d);
-            });
-            f.scrollTop = f.scrollHeight;
-        }
-
-        async function searchUser() {
-            const s = await db.collection('users').where('email', '==', document.getElementById('s-input').value).get();
-            const r = document.getElementById('s-results'); r.innerHTML = '';
-            s.forEach(doc => {
-                if(doc.id === auth.currentUser.uid) return;
-                const d = document.createElement('div');
-                d.className = "glass p-4 rounded-2xl flex justify-between items-center";
-                d.innerHTML = `<p class="text-[10px] font-bold uppercase tracking-widest">${doc.data().name}</p><button onclick="startDM('${doc.id}', '${doc.data().name}')" class="btn-primary px-4 py-2 rounded-xl text-[7px] uppercase">Chat</button>`;
-                r.appendChild(d);
+                d.className = `p-4 rounded-xl cursor-none transition-all ${c.id === currentId ? 'bg-white text-black translate-x-2' : 'hover:bg-white/5 text-zinc-500'}`;
+                d.onclick = () => switchChat(c.id);
+                d.innerHTML = `<div class="flex justify-between items-center"><span class="text-[9px] font-black uppercase tracking-widest">${c.title}</span><span onclick="event.stopPropagation(); deleteChat(${c.id})" class="text-[8px] opacity-30 hover:opacity-100">✕</span></div>`;
+                l.appendChild(d);
             });
         }
 
-        function startDM(id, name) {
-            if(!chats.dms.find(d => d.id === id)) chats.dms.push({ id, name, msgs: [] });
-            current = id; render(); renderDMs(); toggleSocial();
-        }
-
-        function renderDMs() {
-            const l = document.getElementById('dm-list'); l.innerHTML = '';
-            chats.dms.forEach(d => {
-                const b = document.createElement('button');
-                b.className = `w-full text-left p-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] ${current === d.id ? 'bg-white text-black' : 'text-zinc-600 glass'}`;
-                b.onclick = () => { current = d.id; render(); renderDMs(); };
-                b.innerText = d.name;
-                l.appendChild(b);
-            });
-        }
-
-        function toggleSocial() { document.getElementById('social-panel').classList.toggle('hidden'); }
-        function save() { localStorage.setItem('eclipse_v39', JSON.stringify(chats)); }
-        function load() { const d = localStorage.getItem('eclipse_v39'); if(d) chats = JSON.parse(d); render(); renderDMs(); }
+        function switchChat(id) { currentId = id; renderChatList(); renderMessages(); }
+        function deleteChat(id) { chats = chats.filter(c => c.id !== id); if(chats.length > 0) currentId = chats[0].id; else createNewChat(); save(); renderChatList(); renderMessages(); }
+        function save() { localStorage.setItem('eclipse_v40', JSON.stringify(chats)); }
+        document.getElementById('user-input').onkeydown = (e) => { if(e.key === 'Enter') handleSend(); };
     </script>
 </body>
 </html>
