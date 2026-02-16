@@ -2,7 +2,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
     const { messages, modelType } = req.body;
-    const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA.";
+    const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA, desenvolvida pela EclipseByte Group.";
 
     try {
         let apiUrl, apiKey, modelName;
@@ -38,11 +38,15 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
-        if (data.error) throw new Error(data.error.message);
+        if (data.error) {
+            console.error("Erro da API:", data.error);
+            return res.status(500).json({ reply: `Erro na API: ${data.error.message}` });
+        }
 
         const reply = data.choices[0].message.content;
         res.status(200).json({ reply });
+
     } catch (error) {
-        res.status(500).json({ reply: "Erro na conexão com o modelo selecionado." });
+        res.status(500).json({ reply: "Erro crítico na conexão com o servidor." });
     }
 }
