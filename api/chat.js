@@ -1,64 +1,48 @@
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
-    const { messages, modelType } = req.body;
+    const { messages, modelType, userName } = req.body;
     const manutencaoAtiva = true; 
 
     if (modelType === 'waver' && manutencaoAtiva) {
-        return res.status(503).json({ reply: "O motor Eclipse Waver está passando por uma atualização de estabilidade. Por favor, utilize o Eclipse IA temporariamente." });
+        return res.status(503).json({ reply: "O motor Eclipse Waver está em manutenção." });
     }
 
-    const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA.";
+    // A IA agora sabe o nome do usuário através do prompt de sistema
+    const SYSTEM_PROMPT = `${process.env.SYSTEM_PROMPT || "Você é a Eclipse IA."} O nome do usuário é ${userName || 'Usuário'}. Trate-o por esse nome de forma profissional.`;
 
     try {
+        let apiUrl, apiKey, body;
+
         if (modelType === 'waver') {
-            const apiKey = process.env.GEMINI_API_KEY;
-            const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
-
-            const formattedContents = messages.map(m => ({
-                role: m.role === 'model' ? 'model' : 'user',
-                parts: [{ text: m.parts[0].text }]
-            }));
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [
-                        { role: 'user', parts: [{ text: `INSTRUÇÃO: ${SYSTEM_PROMPT}` }] },
-                        { role: 'model', parts: [{ text: "Entendido." }] },
-                        ...formattedContents
-                    ]
-                })
-            });
-
-            const data = await response.json();
-            return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
-
+            apiKey = process.env.GEMINI_API_KEY;
+            apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+            body = {
+                contents: [
+                    { role: 'user', parts: [{ text: `INSTRUÇÃO: ${SYSTEM_PROMPT}` }] },
+                    { role: 'model', parts: [{ text: "Entendido." }] },
+                    ...messages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: m.parts[0].text }] }))
+                ]
+            };
         } else {
-            const apiKey = process.env.GROQ_API_KEY;
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: "system", content: SYSTEM_PROMPT },
-                        ...messages.map(m => ({
-                            role: m.role === 'model' ? 'assistant' : 'user',
-                            content: m.parts[0].text
-                        }))
-                    ]
-                })
-            });
-
-            const data = await response.json();
-            res.status(200).json({ reply: data.choices[0].message.content });
+            apiKey = process.env.GROQ_API_KEY;
+            apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            body = {
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.parts[0].text }))]
+            };
         }
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        const reply = modelType === 'waver' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+        res.status(200).json({ reply });
     } catch (error) {
-        res.status(500).json({ reply: "Falha na comunicação com o motor." });
+        res.status(500).json({ reply: "Falha na comunicação." });
     }
 }
