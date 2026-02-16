@@ -11,48 +11,62 @@
         :root { --bg: #ffffff; --side: #f8f9fa; --text: #1a1a1a; }
         @media (prefers-color-scheme: dark) { :root { --bg: #0d0d0d; --side: #141414; --text: #f0f0f0; } }
 
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; margin: 0; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; display: flex; }
+        
+        /* Intro Fix */
         .intro-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .sidebar { width: 300px; background: var(--side); border-right: 1px solid rgba(128,128,128,0.1); height: 100vh; display: flex; flex-direction: column; }
-        .main-ui { flex: 1; height: 100vh; display: flex; flex-direction: column; position: relative; }
-        .chat-scroll { flex: 1; overflow-y: auto; padding: 40px 20px; }
-        .msg-box { max-width: 800px; margin: 0 auto; margin-bottom: 50px; animation: slideUp 0.4s ease forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .glass-input { background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.1); border-radius: 20px; padding: 15px; display: flex; align-items: flex-end; gap: 10px; }
         .hidden { display: none !important; }
-        .fade-out { opacity: 0; pointer-events: none; transition: 0.8s; }
+        .fade-out { opacity: 0; pointer-events: none; transition: 0.8s ease; }
+
+        /* Sidebar Fix */
+        .sidebar { width: 280px; background: var(--side); border-right: 1px solid rgba(128,128,128,0.1); height: 100vh; display: flex; flex-direction: column; flex-shrink: 0; }
+        
+        /* Main UI Fix */
+        .main-ui { flex-grow: 1; height: 100vh; display: flex; flex-direction: column; position: relative; width: 100%; }
+        .chat-scroll { flex-grow: 1; overflow-y: auto; padding: 40px 20px; }
+        .msg-container { max-width: 800px; margin: 0 auto; width: 100%; }
+        
+        .message-entry { margin-bottom: 40px; animation: fadeInUp 0.4s ease forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .input-bar { padding: 20px 40px 40px; }
+        .glass-box { background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.1); border-radius: 20px; padding: 15px 25px; display: flex; align-items: flex-end; gap: 15px; }
+        
+        textarea { width: 100%; background: transparent; border: none; outline: none; color: inherit; resize: none; font-size: 14px; line-height: 1.6; }
+        
+        #boot-bar-bg { width: 200px; height: 2px; background: rgba(128,128,128,0.2); border-radius: 10px; overflow: hidden; margin: 20px auto; }
+        #boot-bar-fill { height: 100%; width: 0%; background: var(--text); transition: width 0.5s ease; }
+
+        .btn-primary { background: var(--text); color: var(--bg); padding: 12px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; border: none; width: 100%; }
     </style>
 </head>
-<body class="flex">
+<body>
 
     <div id="intro" class="intro-overlay">
-        <div id="boot-view" class="text-center">
-            <h1 class="text-3xl font-light tracking-[0.4em] mb-6">ECLIPSE</h1>
-            <div class="w-48 h-[2px] bg-zinc-200 dark:bg-zinc-800 mx-auto rounded-full overflow-hidden">
-                <div id="boot-bar" class="w-0 h-full bg-black dark:bg-white transition-all duration-500"></div>
-            </div>
-            <p id="boot-status" class="text-[9px] mt-4 uppercase tracking-[0.2em] opacity-40 font-bold italic">Inicializando Protocolos</p>
+        <div id="step-boot" class="text-center">
+            <h1 class="text-3xl font-light tracking-[0.4em]">ECLIPSE</h1>
+            <div id="boot-bar-bg"><div id="boot-bar-fill"></div></div>
+            <p id="boot-status" class="text-[9px] uppercase tracking-widest opacity-40 font-bold">Iniciando Protocolos</p>
         </div>
 
-        <div id="name-view" class="hidden text-center px-10 max-w-sm w-full">
-            <h2 class="text-[10px] font-black uppercase tracking-widest mb-10 opacity-30">Registro de Identidade</h2>
+        <div id="step-name" class="hidden text-center w-full max-w-sm px-10">
+            <h2 class="text-[10px] font-black uppercase tracking-widest mb-10 opacity-30">Identidade de Acesso</h2>
             <p class="text-xl font-light mb-8 italic">"Como devemos te chamar?"</p>
-            <input type="text" id="name-input" class="w-full bg-transparent border-b border-zinc-400 p-2 text-center text-lg outline-none mb-2">
-            <p id="error-name" class="text-[9px] text-red-500 font-bold uppercase hidden">Identidade não permitida ou inválida.</p>
-            <button onclick="confirmName()" class="mt-12 w-full py-4 bg-black dark:bg-white text-white dark:text-black rounded-full text-[10px] font-bold uppercase tracking-widest transition-transform active:scale-95">Acessar Sistema</button>
+            <input type="text" id="name-input" class="w-full bg-transparent border-b border-zinc-400 p-2 text-center text-lg outline-none mb-2" autofocus>
+            <p id="name-error" class="text-[9px] text-red-500 font-bold uppercase hidden mt-2">Nome restrito ou inválido. Tente outro.</p>
+            <button onclick="saveIdentity()" class="btn-primary mt-10">Confirmar Acesso</button>
         </div>
     </div>
 
-    <aside class="sidebar hidden lg:flex">
+    <aside class="sidebar">
         <div class="p-8">
-            <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 mb-10">Intelligence System</h2>
-            <button onclick="createNewChat()" class="w-full py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02]">Nova Conversa</button>
+            <h2 class="text-[10px] font-bold tracking-[0.3em] uppercase opacity-20 mb-8">Intelligence</h2>
+            <button onclick="createNewChat()" class="btn-primary shadow-lg">Nova Conversa</button>
         </div>
-        <div id="chat-list" class="flex-1 overflow-y-auto px-6 space-y-2 no-scrollbar"></div>
+        <div id="chat-list" class="flex-1 overflow-y-auto px-6 space-y-2"></div>
         <div class="p-8 border-t border-zinc-100 dark:border-zinc-900">
-            <label class="text-[9px] font-black uppercase tracking-widest opacity-30 mb-3 block">Motor Ativo</label>
-            <select id="model-select" class="w-full bg-zinc-100 dark:bg-zinc-800 p-4 rounded-xl text-xs font-bold outline-none cursor-pointer border-none">
+            <select id="model-select" class="w-full bg-zinc-100 dark:bg-zinc-800 p-4 rounded-xl text-xs font-bold outline-none border-none">
                 <option value="ia">Eclipse IA</option>
                 <option value="waver">Eclipse Waver</option>
             </select>
@@ -61,117 +75,114 @@
 
     <main class="main-ui">
         <header class="h-20 flex items-center justify-between px-10 border-b border-zinc-100 dark:border-zinc-900">
-            <div class="flex flex-col">
-                <span id="chat-title" class="text-xs font-bold uppercase tracking-tighter">Sessão Ativa</span>
-                <span class="text-[9px] opacity-30 font-bold uppercase tracking-widest">Protocolo de Resposta Criptografado</span>
+            <div>
+                <span id="header-title" class="text-xs font-bold uppercase tracking-tight">Sessão Ativa</span>
             </div>
-            <button onclick="fullWipe()" class="text-[9px] font-black text-red-500 uppercase tracking-widest hover:opacity-50 transition">Reset All Data</button>
+            <button onclick="fullWipe()" class="text-[9px] font-black text-red-500 uppercase tracking-widest">Reset System</button>
         </header>
 
-        <div id="flow" class="chat-scroll no-scrollbar">
-            <div id="wrapper" class="max-w-[800px] mx-auto"></div>
+        <div id="flow-container" class="chat-scroll">
+            <div id="messages-wrapper" class="msg-container"></div>
         </div>
 
-        <div class="p-10">
-            <div class="max-w-[800px] mx-auto">
-                <div class="glass-input">
-                    <textarea id="user-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}" placeholder="Envie um comando para a inteligência..." class="w-full bg-transparent border-none outline-none p-2 text-sm resize-none max-h-48"></textarea>
-                    <button onclick="send()" class="p-3 hover:scale-110 transition active:scale-95">
+        <div class="input-bar">
+            <div class="msg-container">
+                <div class="glass-box">
+                    <textarea id="user-input" rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}" placeholder="Envie sua mensagem..."></textarea>
+                    <button onclick="send()" class="mb-1">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                     </button>
                 </div>
-                <p class="text-[10px] text-center text-zinc-400 mt-8 font-medium">Eclipse IA pode cometer erros. Verifique informações críticas.</p>
+                <p class="text-[10px] text-center text-zinc-400 mt-6 font-medium">Eclipse IA pode cometer erros. Verifique informações críticas.</p>
             </div>
         </div>
     </main>
 
     <script>
         const forbidden = ["pau", "cu", "puta", "viado", "caralho", "merda", "adm", "eclipse"];
-        let chats = JSON.parse(localStorage.getItem('ev55_chats')) || [];
+        let chats = JSON.parse(localStorage.getItem('ev56_chats')) || [];
         let currentId = null;
-        let userName = localStorage.getItem('ev55_name') || "";
+        let userName = localStorage.getItem('ev56_name') || "";
 
         async function runBoot() {
-            const bar = document.getElementById('boot-bar');
+            const fill = document.getElementById('boot-bar-fill');
             const status = document.getElementById('boot-status');
-            const logs = ["Verificando Núcleos", "Sincronizando Motores", "Pronto"];
-
-            for(let i=0; i<logs.length; i++) {
-                bar.style.width = ((i+1)*33.3) + "%";
-                status.innerText = logs[i];
+            const steps = ["Sincronizando...", "Carregando...", "Pronto"];
+            
+            for(let i=0; i<steps.length; i++) {
+                fill.style.width = ((i+1) * 33.3) + "%";
+                status.innerText = steps[i];
                 await new Promise(r => setTimeout(r, 600));
             }
-
-            document.getElementById('boot-view').classList.add('hidden');
-            document.getElementById('name-view').classList.remove('hidden');
+            document.getElementById('step-boot').classList.add('hidden');
+            document.getElementById('step-name').classList.remove('hidden');
         }
 
-        function confirmName() {
-            const f = document.getElementById('name-input');
-            const val = f.value.trim().toLowerCase();
-            const err = document.getElementById('error-name');
+        function saveIdentity() {
+            const input = document.getElementById('name-input');
+            const val = input.value.trim().toLowerCase();
+            const err = document.getElementById('name-error');
 
             if(val.length < 2 || forbidden.some(w => val.includes(w))) {
-                err.classList.remove('hidden'); f.value = ""; return;
+                err.classList.remove('hidden'); input.value = ""; return;
             }
 
-            userName = f.value.trim();
-            localStorage.setItem('ev55_name', userName);
-            localStorage.setItem('ev55_init', 'true');
+            userName = input.value.trim();
+            localStorage.setItem('ev56_name', userName);
+            localStorage.setItem('ev56_init', 'true');
             document.getElementById('intro').classList.add('fade-out');
-            setTimeout(() => { document.getElementById('intro').style.display = 'none'; init(); }, 800);
+            setTimeout(() => { document.getElementById('intro').style.display = 'none'; initApp(); }, 800);
         }
 
         async function send() {
             const input = document.getElementById('user-input');
-            const mod = document.getElementById('model-select').value;
             const text = input.value.trim();
             if(!text) return;
 
             const chat = chats.find(c => c.id === currentId);
             chat.messages.push({ role: 'user', parts: [{ text }] });
-            if(chat.title === 'Nova Conversa') chat.title = text.substring(0, 25);
+            if(chat.title === 'Nova Conversa') chat.title = text.substring(0, 20);
 
-            input.value = ''; input.style.height = 'auto'; render();
+            input.value = ''; input.style.height = 'auto'; renderMessages();
 
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: chat.messages, modelType: mod, userName })
+                    body: JSON.stringify({ messages: chat.messages, modelType: document.getElementById('model-select').value, userName })
                 });
                 const data = await res.json();
                 chat.messages.push({ role: 'model', parts: [{ text: data.reply }] });
-                save(); render();
+                saveData(); renderMessages();
             } catch(e) {}
         }
 
-        function render() {
-            const w = document.getElementById('wrapper'); w.innerHTML = '';
+        function renderMessages() {
+            const w = document.getElementById('messages-wrapper'); w.innerHTML = '';
             const chat = chats.find(c => c.id === currentId);
             if(!chat) return;
 
-            document.getElementById('chat-title').innerText = chat.title;
+            document.getElementById('header-title').innerText = chat.title;
 
             chat.messages.forEach(m => {
                 const ai = m.role === 'model';
-                const d = document.createElement('div');
-                d.className = 'msg-box';
-                d.innerHTML = `<div class="text-[9px] font-black uppercase tracking-[0.3em] opacity-30 mb-4">${ai ? 'Eclipse IA' : userName}</div>
-                               <div class="text-[14px] leading-relaxed font-medium">${ai ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>`;
-                w.appendChild(d);
+                const div = document.createElement('div');
+                div.className = 'message-entry';
+                div.innerHTML = `<div class="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-3">${ai ? 'Eclipse IA' : userName}</div>
+                                 <div class="text-[14px] leading-relaxed">${ai ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>`;
+                w.appendChild(div);
             });
-            document.getElementById('flow').scrollTop = document.getElementById('flow').scrollHeight;
-            renderList();
+            document.getElementById('flow-container').scrollTop = document.getElementById('flow-container').scrollHeight;
+            renderSidebar();
         }
 
-        function renderList() {
+        function renderSidebar() {
             const l = document.getElementById('chat-list'); l.innerHTML = '';
             chats.forEach(c => {
                 const d = document.createElement('div');
-                d.className = `p-4 rounded-2xl cursor-pointer text-[10px] font-bold uppercase tracking-tighter transition-all ${c.id === currentId ? 'bg-black text-white dark:bg-white dark:text-black' : 'opacity-40 hover:opacity-100'}`;
-                d.onclick = () => { currentId = c.id; render(); };
-                d.innerHTML = c.title;
+                d.className = `p-4 rounded-xl cursor-pointer text-[10px] font-bold uppercase transition-all ${c.id === currentId ? 'bg-black text-white dark:bg-white dark:text-black' : 'opacity-40 hover:opacity-100'}`;
+                d.onclick = () => { currentId = c.id; renderMessages(); };
+                d.innerText = c.title;
                 l.appendChild(d);
             });
         }
@@ -179,16 +190,16 @@
         function createNewChat() {
             const id = Date.now();
             chats.unshift({ id, title: 'Nova Conversa', messages: [] });
-            currentId = id; save(); render();
+            currentId = id; saveData(); renderMessages();
         }
 
-        function fullWipe() { if(confirm("Deseja apagar todos os dados permanentemente?")) { localStorage.clear(); location.reload(); } }
-        function save() { localStorage.setItem('ev55_chats', JSON.stringify(chats)); }
-        function init() { if(chats.length > 0) { currentId = chats[0].id; render(); } else { createNewChat(); } }
+        function fullWipe() { if(confirm("Apagar tudo?")) { localStorage.clear(); location.reload(); } }
+        function saveData() { localStorage.setItem('ev56_chats', JSON.stringify(chats)); }
+        function initApp() { if(chats.length > 0) { currentId = chats[0].id; renderMessages(); } else { createNewChat(); } }
 
-        if(localStorage.getItem('ev55_init')) {
+        if(localStorage.getItem('ev56_init')) {
             document.getElementById('intro').style.display = 'none';
-            init();
+            initApp();
         } else {
             runBoot();
         }
