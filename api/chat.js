@@ -2,11 +2,10 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
     const { messages, modelType } = req.body;
-    const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA.";
+    const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA, desenvolvida pela EclipseByte Group.";
 
     try {
         if (modelType === 'waver') {
-            // MOTOR ECLIPSE WAVER (GEMINI)
             const apiKey = process.env.GEMINI_API_KEY;
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -23,13 +22,11 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
+            if (data.error) return res.status(500).json({ reply: `Erro Gemini: ${data.error.message}` });
             
-            const reply = data.candidates[0].content.parts[0].text;
-            return res.status(200).json({ reply });
+            return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
 
         } else {
-            // MOTOR ECLIPSE IA (GROQ)
             const apiKey = process.env.GROQ_API_KEY;
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -50,9 +47,10 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
+            if (data.error) return res.status(500).json({ reply: `Erro Groq: ${data.error.message}` });
             res.status(200).json({ reply: data.choices[0].message.content });
         }
     } catch (error) {
-        res.status(500).json({ reply: "Erro na conexão com o motor selecionado." });
+        res.status(500).json({ reply: "Falha crítica na rede da Eclipse IA." });
     }
 }
