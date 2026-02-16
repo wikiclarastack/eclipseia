@@ -2,6 +2,12 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Apenas POST' });
 
     const { messages, modelType } = req.body;
+    const manutencaoAtiva = true; 
+
+    if (modelType === 'waver' && manutencaoAtiva) {
+        return res.status(503).json({ reply: "O motor Eclipse Waver está passando por uma atualização de estabilidade. Por favor, utilize o Eclipse IA temporariamente." });
+    }
+
     const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT || "Você é a Eclipse IA.";
 
     try {
@@ -19,16 +25,14 @@ export default async function handler(req, res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [
-                        { role: 'user', parts: [{ text: `INSTRUÇÃO DE SISTEMA: ${SYSTEM_PROMPT}` }] },
-                        { role: 'model', parts: [{ text: "Entendido. Sistema configurado." }] },
+                        { role: 'user', parts: [{ text: `INSTRUÇÃO: ${SYSTEM_PROMPT}` }] },
+                        { role: 'model', parts: [{ text: "Entendido." }] },
                         ...formattedContents
                     ]
                 })
             });
 
             const data = await response.json();
-            if (data.error) return res.status(500).json({ reply: `Erro Waver: ${data.error.message}` });
-            
             return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
 
         } else {
@@ -55,6 +59,6 @@ export default async function handler(req, res) {
             res.status(200).json({ reply: data.choices[0].message.content });
         }
     } catch (error) {
-        res.status(500).json({ reply: "Falha na comunicação com os servidores centrais." });
+        res.status(500).json({ reply: "Falha na comunicação com o motor." });
     }
 }
