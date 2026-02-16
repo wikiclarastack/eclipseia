@@ -11,141 +11,150 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
         * { scroll-behavior: smooth; margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow-x: hidden; height: 100vh; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
         
-        #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        #bg-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
 
-        /* GLOBO 3D REAL CSS */
-        .globe-wrapper { position: relative; width: 320px; height: 320px; margin: 50px auto; perspective: 1000px; }
-        .globe { 
-            position: absolute; width: 100%; height: 100%; 
-            border-radius: 50%; 
+        /* GLOBO 3D INTERATIVO */
+        .globe-container { position: relative; width: 350px; height: 350px; margin: 40px auto; transform-style: preserve-3d; transition: 0.5s ease; }
+        .globe-container:hover { transform: scale(1.1) rotate(5deg); }
+        .globe-sphere { 
+            position: absolute; width: 100%; height: 100%; border-radius: 50%; 
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/1024px-Blue_Marble_2002.png');
-            background-size: cover;
-            box-shadow: inset -30px -30px 80px #000, 0 0 60px rgba(255,255,255,0.1);
-            animation: rotateGlobe 30s linear infinite;
-            transform-style: preserve-3d;
+            background-size: 200% 100%;
+            box-shadow: inset -40px -40px 100px #000, 0 0 40px rgba(255,255,255,0.1);
+            animation: moveGlobe 25s linear infinite;
         }
-        .globe-overlay {
-            position: absolute; inset: 0; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), transparent);
-            pointer-events: none;
-        }
-        @keyframes rotateGlobe {
-            from { background-position: 0 0; }
-            to { background-position: 200% 0; }
-        }
+        @keyframes moveGlobe { from { background-position: 0 0; } to { background-position: 200% 0; } }
 
-        /* FIX DO CHAT */
-        .sidebar { background: #050505; width: 280px; border-right: 1px solid #111; height: 100vh; z-index: 1000; position: fixed; left: -280px; transition: 0.4s ease; display: flex; flex-direction: column; }
+        /* UI ELEMENTS */
+        .sidebar { background: #050505; width: 280px; border-right: 1px solid #111; height: 100vh; z-index: 2000; position: fixed; left: -280px; transition: 0.4s; }
         .sidebar.open { left: 0; }
-        .chat-card { cursor: pointer; padding: 14px; margin-bottom: 8px; background: #0a0a0a; border-radius: 8px; border: 1px solid #151515; transition: 0.2s; }
-        .chat-card.active { background: #fff; color: #000; font-weight: 800; }
         
-        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 500; position: fixed; inset: 0; }
-        .msg-container { max-width: 850px; margin: 0 auto; padding: 20px; width: 100%; }
+        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 1000; position: fixed; inset: 0; }
         
-        .indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .online { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+        .chat-card { cursor: pointer; padding: 15px; margin-bottom: 8px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; transition: 0.2s; }
+        .chat-card.active { background: #fff; color: #000; }
+
+        .msg-container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; }
+        
+        .btn-main { background: #fff; color: #000; font-weight: 800; padding: 18px 45px; border-radius: 100px; text-transform: uppercase; font-size: 11px; transition: 0.3s; }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,255,255,0.2); }
+
+        pre { background: #080808 !important; border: 1px solid #111; border-radius: 12px; padding: 20px; position: relative; margin: 15px 0; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; font-size: 9px; background: #1a1a1a; color: #fff; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body class="flex">
 
     <canvas id="bg-canvas"></canvas>
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-[998] hidden" onclick="toggleSidebar()"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-[1999] hidden" onclick="toggleSidebar()"></div>
 
-    <aside id="sidebar" class="sidebar p-8">
-        <div class="text-white font-black text-2xl tracking-tighter mb-10 uppercase">Eclipse IA</div>
-        <button onclick="createNewChat()" class="mb-10 w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-lg hover:invert transition">Nova Conversa</button>
-        <div id="chat-list" class="flex-1 overflow-y-auto space-y-2"></div>
+    <aside id="sidebar" class="sidebar flex flex-col p-8">
+        <h2 class="text-white font-black text-2xl mb-12">ECLIPSE</h2>
+        <button onclick="createNewChat()" class="w-full py-4 bg-white text-black font-black text-[10px] uppercase rounded-xl mb-8">Nova Conversa</button>
+        <div id="chat-list" class="flex-1 overflow-y-auto space-y-3"></div>
     </aside>
 
-    <main id="main-content" class="flex-1 h-screen overflow-y-auto">
+    <main id="main-content" class="flex-1 h-screen overflow-y-auto relative z-10">
         
         <div id="landing-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <h1 class="text-7xl md:text-[10rem] font-black tracking-tighter leading-none mb-12">ECLIPSE</h1>
-            <button onclick="startApp()" class="bg-white text-black px-20 py-6 font-black text-xs rounded-full hover:tracking-widest transition-all">INICIAR</button>
-            <button onclick="document.getElementById('about-section').scrollIntoView()" class="mt-12 text-[9px] text-gray-600 font-bold uppercase tracking-[0.5em]">Conexão Global ↓</button>
+            <h1 class="text-7xl md:text-[10rem] font-black tracking-tighter mb-10">ECLIPSE</h1>
+            <button onclick="startApp()" class="btn-main">Iniciar Agora</button>
+            <button onclick="document.getElementById('about-section').scrollIntoView()" class="mt-12 text-[9px] text-gray-700 font-bold uppercase tracking-[0.5em]">Global Usage ↓</button>
         </div>
 
-        <section id="about-section" class="min-h-screen flex flex-col items-center justify-center p-12 bg-[#020202] border-t border-white/5 relative">
-            <div class="globe-wrapper">
-                <div class="globe"></div>
-                <div class="globe-overlay"></div>
+        <section id="about-section" class="min-h-screen flex flex-col items-center justify-center p-12 bg-[#020202] border-t border-white/5">
+            <div class="globe-container">
+                <div class="globe-sphere"></div>
             </div>
-
-            <div class="max-w-4xl w-full text-center">
-                <h3 class="text-3xl font-black mb-16 tracking-widest uppercase">Alcance do Sistema</h3>
-                <div class="grid md:grid-cols-2 gap-8 text-left">
-                    <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <div class="flex items-center mb-4">
-                            <span class="indicator online"></span>
-                            <h4 class="text-white font-black uppercase text-sm">Brasil & EUA</h4>
+            
+            <div class="max-w-4xl text-center">
+                <h3 class="text-3xl font-black mb-10 uppercase tracking-widest">Atividade Mundial</h3>
+                <div class="grid md:grid-cols-2 gap-10">
+                    <div class="p-8 border border-white/5 rounded-3xl bg-white/[0.01] hover:border-white/20 transition">
+                        <div class="flex items-center gap-3 mb-4 justify-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <h4 class="font-black uppercase text-sm">Brasil (Crescimento 200%)</h4>
                         </div>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Nossos maiores centros de usuários. A Eclipse é líder em engajamento nestes territórios, processando milhões de requisições diárias com foco em scripts e automação.</p>
+                        <p class="text-gray-500 text-xs uppercase">Comunidade brasileira lidera o uso para automação e scripts de alto nível.</p>
                     </div>
-                    <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <h4 class="text-white font-black mb-4 uppercase text-sm">Performance Pura</h4>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Uma IA sem as amarras tradicionais. Desenvolvida para ser direta, rápida e eficiente, independente de onde você esteja acessando.</p>
+                    <div class="p-8 border border-white/5 rounded-3xl bg-white/[0.01] hover:border-white/20 transition">
+                        <div class="flex items-center gap-3 mb-4 justify-center">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                            <h4 class="font-black uppercase text-sm">EUA (Maior Tráfego)</h4>
+                        </div>
+                        <p class="text-gray-500 text-xs uppercase">Os usuários norte-americanos representam 45% da nossa carga atual de processamento.</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <div id="chat-ui">
-            <header class="p-6 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-xl">
-                <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase border border-white/10 px-6 py-3 rounded-lg">Menu</button>
-                <div class="text-[9px] font-black text-gray-500 tracking-[0.3em] uppercase">Eclipse v14.4 Stable</div>
-                <button onclick="location.reload()" class="text-gray-600 font-bold text-[10px] uppercase">Sair</button>
+            <header class="p-6 border-b border-white/5 flex justify-between items-center bg-black">
+                <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase border border-white/10 px-6 py-3 rounded-xl hover:bg-white/5 transition">Menu</button>
+                <div class="text-[10px] font-black text-gray-800 tracking-[0.5em] uppercase">Eclipse Stable Interface</div>
+                <button onclick="location.reload()" class="text-gray-500 font-bold text-[10px] uppercase">Reset</button>
             </header>
             
             <div id="chat-flow" class="flex-1 overflow-y-auto">
                 <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center p-6">
-                    <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tighter">Como posso ajudar?</h2>
+                    <h2 class="text-4xl md:text-5xl font-black mb-8 tracking-tighter">O que vamos criar hoje?</h2>
                     <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="setPrompt('Gere um script funcional')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[9px] uppercase font-black hover:bg-white hover:text-black transition">Scripting</button>
-                        <button onclick="setPrompt('Otimize meu fluxo')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[9px] uppercase font-black hover:bg-white hover:text-black transition">Otimização</button>
+                        <button onclick="setPrompt('Gere um código Python')" class="px-6 py-3 border border-white/10 rounded-full text-[9px] font-black uppercase hover:bg-white hover:text-black transition">Python Dev</button>
+                        <button onclick="setPrompt('Explique redes neurais')" class="px-6 py-3 border border-white/10 rounded-full text-[9px] font-black uppercase hover:bg-white hover:text-black transition">Neural Explainer</button>
                     </div>
                 </div>
             </div>
             
-            <div class="p-6 md:p-12 bg-gradient-to-t from-black to-transparent">
-                <div class="max-w-3xl mx-auto flex gap-4 bg-[#0a0a0a] p-2 border border-white/10 rounded-xl focus-within:border-white/30 transition">
-                    <input id="user-input" type="text" placeholder="Aguardando comando..." class="flex-1 bg-transparent py-4 px-6 outline-none text-sm text-white">
-                    <button id="send-btn" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-lg">Enviar</button>
+            <div class="p-6 md:p-12">
+                <div class="max-w-3xl mx-auto flex gap-4 bg-[#0a0a0a] p-2 border border-white/10 rounded-2xl focus-within:border-white/40 transition">
+                    <input id="user-input" type="text" placeholder="Envie sua mensagem..." class="flex-1 bg-transparent py-4 px-6 outline-none text-sm text-white">
+                    <button onclick="handleSend()" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-xl hover:bg-gray-200 transition">Enviar</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
+        // FUNDO INTERATIVO (Partículas que seguem o mouse)
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
+        let mouse = { x: null, y: null };
+
         function initBg() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             particles = [];
-            for(let i=0; i<50; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, size: Math.random()*1 });
+            for(let i=0; i<80; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, size: 1.5 });
         }
+        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
         function animateBg() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            particles.forEach(p => {
+            particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy;
                 if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+
+                // Linhas de conexão
+                for(let j=i; j<particles.length; j++) {
+                    let dx = p.x - particles[j].x; let dy = p.y - particles[j].y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 100) {
+                        ctx.strokeStyle = `rgba(255,255,255,${0.1 - dist/1000})`;
+                        ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+                    }
+                }
             });
             requestAnimationFrame(animateBg);
         }
         initBg(); animateBg();
 
-        let chats = JSON.parse(localStorage.getItem('eclipse_v14_4')) || [];
+        // CHAT ENGINE
+        let chats = JSON.parse(localStorage.getItem('eclipse_v15')) || [];
         let currentId = null;
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar-overlay').classList.toggle('hidden');
-        }
 
         function startApp() {
             document.getElementById('landing-screen').style.display = 'none';
@@ -155,9 +164,14 @@
             else createNewChat();
         }
 
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
         function createNewChat() {
             const id = Date.now();
-            chats.unshift({ id, title: 'Sessão ' + (chats.length + 1), messages: [] });
+            chats.unshift({ id, title: 'Chat ' + (chats.length + 1), messages: [] });
             currentId = id;
             save(); renderChatList(); renderMessages();
             if(window.innerWidth < 768) toggleSidebar();
@@ -177,8 +191,7 @@
                 const div = document.createElement('div');
                 div.className = `chat-card flex justify-between items-center ${c.id === currentId ? 'active' : ''}`;
                 div.onclick = () => switchChat(c.id);
-                div.innerHTML = `<span class="text-[10px] uppercase truncate font-bold">${c.title}</span>
-                                 <button onclick="event.stopPropagation(); deleteChat(${c.id})">✕</button>`;
+                div.innerHTML = `<span class="text-[10px] uppercase font-bold truncate pr-4">${c.title}</span><button onclick="event.stopPropagation(); deleteChat(${c.id})">✕</button>`;
                 list.appendChild(div);
             });
         }
@@ -189,9 +202,7 @@
             save(); renderChatList(); renderMessages();
         }
 
-        function setPrompt(txt) { document.getElementById('user-input').value = txt; handleSend(); }
-
-        async function handleSend() {
+        function handleSend() {
             const input = document.getElementById('user-input');
             const val = input.value.trim();
             if(!val || !currentId) return;
@@ -199,14 +210,19 @@
             const chat = chats.find(c => c.id === currentId);
             if(chat.messages.length === 0) chat.title = val.substring(0, 15);
             
-            chat.messages.push({ role: 'user', parts: [{ text: val }] });
+            chat.messages.push({ role: 'user', text: val });
             input.value = '';
             renderMessages();
 
-            const loader = createLoader();
+            // Resposta Automática
+            const loader = document.createElement('div');
+            loader.className = 'py-10 opacity-30 text-[9px] uppercase font-black tracking-widest msg-container animate-pulse';
+            loader.innerText = 'Eclipse está processando...';
+            document.getElementById('chat-flow').appendChild(loader);
+
             setTimeout(() => {
                 loader.remove();
-                chat.messages.push({ role: 'model', parts: [{ text: "Eclipse processou sua solicitação com sucesso.\n\n```python\nprint('Eclipse IA: Global and Powerful')\n```" }] });
+                chat.messages.push({ role: 'model', text: "Comando executado com sucesso.\n\n```python\nprint('Eclipse v15: Online e Funcional')\n```" });
                 save(); renderMessages();
             }, 800);
         }
@@ -227,37 +243,29 @@
             chat.messages.forEach(m => {
                 const isModel = m.role === 'model';
                 const div = document.createElement('div');
-                div.className = `py-10 ${isModel ? 'bg-white/[0.02]' : ''}`;
+                div.className = `py-12 ${isModel ? 'bg-white/[0.02]' : ''}`;
                 div.innerHTML = `<div class="msg-container">
-                    <span class="text-[9px] font-black text-gray-700 uppercase mb-4 block">${isModel ? 'Eclipse IA' : 'Usuário'}</span>
-                    <div class="text-[14px] leading-relaxed text-gray-300">${isModel ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
+                    <span class="text-[9px] font-black text-gray-700 uppercase mb-4 block">${isModel ? 'Eclipse IA' : 'Admin'}</span>
+                    <div class="text-[14px] text-gray-300 leading-relaxed">${isModel ? marked.parse(m.text) : m.text}</div>
                 </div>`;
                 flow.appendChild(div);
             });
 
+            // Highlights & Copy
             flow.querySelectorAll('pre code').forEach(c => {
                 hljs.highlightElement(c);
                 const btn = document.createElement('button');
-                btn.className = 'absolute top-4 right-4 text-[9px] bg-white/10 px-3 py-1 rounded uppercase font-bold';
-                btn.innerText = 'Copiar';
+                btn.className = 'copy-btn'; btn.innerText = 'Copiar';
                 btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'OK'; setTimeout(() => btn.innerText='Copiar', 2000); };
                 c.parentElement.appendChild(btn);
             });
             flow.scrollTop = flow.scrollHeight;
         }
 
-        function createLoader() {
-            const div = document.createElement('div');
-            div.className = 'py-10 opacity-40';
-            div.innerHTML = `<div class="msg-container text-[9px] font-black uppercase tracking-widest animate-pulse">Sincronizando...</div>`;
-            document.getElementById('chat-flow').appendChild(div);
-            document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
-            return div;
-        }
-
-        function save() { localStorage.setItem('eclipse_v14_4', JSON.stringify(chats)); }
-        document.getElementById('send-btn').onclick = handleSend;
+        function setPrompt(t) { document.getElementById('user-input').value = t; handleSend(); }
+        function save() { localStorage.setItem('eclipse_v15', JSON.stringify(chats)); }
         document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
+        window.onresize = initBg;
     </script>
 </body>
 </html>
