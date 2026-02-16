@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     try {
         if (modelType === 'waver') {
             const apiKey = process.env.GEMINI_API_KEY;
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
-            if (data.error) return res.status(500).json({ reply: `Erro Waver: ${data.error.message}` });
+            if (data.error) return res.status(500).json({ reply: `Erro Waver (Gemini Pro): ${data.error.message}` });
             
             return res.status(200).json({ reply: data.candidates[0].content.parts[0].text });
 
@@ -50,6 +50,6 @@ export default async function handler(req, res) {
             res.status(200).json({ reply: data.choices[0].message.content });
         }
     } catch (error) {
-        res.status(500).json({ reply: "Falha na comunicação com o servidor de inteligência." });
+        res.status(500).json({ reply: "Falha na comunicação com o servidor central." });
     }
 }
