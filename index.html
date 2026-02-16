@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse IA | Global</title>
+    <title>Eclipse IA </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -15,124 +15,121 @@
         
         #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-        /* Estilo do Globo */
-        .world-container { position: relative; width: 300px; height: 300px; margin: 40px auto; perspective: 1000px; }
-        .sphere { width: 100%; height: 100%; position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #222, #000); box-shadow: inset -20px -20px 50px #000, 0 0 50px rgba(255,255,255,0.05); animation: rotate 20s linear infinite; transform-style: preserve-3d; border: 1px solid rgba(255,255,255,0.1); }
-        .sphere::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); opacity: 0.3; }
-        @keyframes rotate { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
-        
-        .pulse-point { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 15px #fff; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(4); opacity: 0; } }
+        /* GLOBO 3D REAL CSS */
+        .globe-wrapper { position: relative; width: 320px; height: 320px; margin: 50px auto; perspective: 1000px; }
+        .globe { 
+            position: absolute; width: 100%; height: 100%; 
+            border-radius: 50%; 
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Blue_Marble_2002.png/1024px-Blue_Marble_2002.png');
+            background-size: cover;
+            box-shadow: inset -30px -30px 80px #000, 0 0 60px rgba(255,255,255,0.1);
+            animation: rotateGlobe 30s linear infinite;
+            transform-style: preserve-3d;
+        }
+        .globe-overlay {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+        @keyframes rotateGlobe {
+            from { background-position: 0 0; }
+            to { background-position: 200% 0; }
+        }
 
-        .sidebar { background: rgba(5, 5, 5, 0.98); backdrop-filter: blur(20px); width: 280px; border-right: 1px solid #111; height: 100vh; z-index: 1000; position: fixed; left: -280px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+        /* FIX DO CHAT */
+        .sidebar { background: #050505; width: 280px; border-right: 1px solid #111; height: 100vh; z-index: 1000; position: fixed; left: -280px; transition: 0.4s ease; display: flex; flex-direction: column; }
         .sidebar.open { left: 0; }
-        
-        .chat-card { cursor: pointer; padding: 14px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid transparent; transition: 0.2s; }
+        .chat-card { cursor: pointer; padding: 14px; margin-bottom: 8px; background: #0a0a0a; border-radius: 8px; border: 1px solid #151515; transition: 0.2s; }
         .chat-card.active { background: #fff; color: #000; font-weight: 800; }
         
-        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 101; position: fixed; inset: 0; }
-        .msg-container { max-width: 800px; margin: 0 auto; padding: 20px; width: 100%; }
+        #chat-ui { display: none; height: 100vh; width: 100%; flex-direction: column; background: #000; z-index: 500; position: fixed; inset: 0; }
+        .msg-container { max-width: 850px; margin: 0 auto; padding: 20px; width: 100%; }
         
-        .feature-tag { font-size: 9px; font-weight: 800; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: #555; text-transform: uppercase; margin-right: 5px; }
+        .indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .online { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
     </style>
 </head>
 <body class="flex">
 
     <canvas id="bg-canvas"></canvas>
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-[999] hidden" onclick="toggleSidebar()"></div>
-
-    <div id="tos-screen" class="fixed inset-0 bg-black z-[9999] flex items-center justify-center p-6">
-        <div class="bg-[#050505] border border-white/5 p-10 max-w-sm w-full text-center rounded-2xl">
-            <h2 class="text-[10px] font-black mb-6 tracking-[0.5em] uppercase">Security Protocol</h2>
-            <p class="text-[11px] text-gray-500 uppercase mb-8 leading-relaxed">Acesso sem restrições. Logs desativados. Responsabilidade do usuário final confirmada.</p>
-            <button id="tos-btn" onclick="acceptTos()" class="bg-white text-black w-full py-4 font-black text-[10px] rounded-xl opacity-20 cursor-not-allowed">Aguarde...</button>
-        </div>
-    </div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 z-[998] hidden" onclick="toggleSidebar()"></div>
 
     <aside id="sidebar" class="sidebar p-8">
-        <div class="text-white font-black text-2xl tracking-tighter mb-10 uppercase">Eclipse</div>
-        <button onclick="createNewChat()" class="mb-10 w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-200 transition">Nova Sessão</button>
+        <div class="text-white font-black text-2xl tracking-tighter mb-10 uppercase">Eclipse IA</div>
+        <button onclick="createNewChat()" class="mb-10 w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-lg hover:invert transition">Nova Conversa</button>
         <div id="chat-list" class="flex-1 overflow-y-auto space-y-2"></div>
     </aside>
 
     <main id="main-content" class="flex-1 h-screen overflow-y-auto">
         
         <div id="landing-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <h1 class="text-7xl md:text-[11rem] font-black tracking-tighter leading-none mb-10">ECLIPSE</h1>
-            <button onclick="startApp()" class="bg-white text-black px-16 py-6 font-black text-xs rounded-full hover:scale-105 transition">ENTRAR NO SISTEMA</button>
-            <button onclick="document.getElementById('about-section').scrollIntoView()" class="mt-10 text-[9px] text-gray-600 font-bold uppercase tracking-[0.5em]">Ver Infraestrutura Global ↓</button>
+            <h1 class="text-7xl md:text-[10rem] font-black tracking-tighter leading-none mb-12">ECLIPSE</h1>
+            <button onclick="startApp()" class="bg-white text-black px-20 py-6 font-black text-xs rounded-full hover:tracking-widest transition-all">INICIAR</button>
+            <button onclick="document.getElementById('about-section').scrollIntoView()" class="mt-12 text-[9px] text-gray-600 font-bold uppercase tracking-[0.5em]">Conexão Global ↓</button>
         </div>
 
         <section id="about-section" class="min-h-screen flex flex-col items-center justify-center p-12 bg-[#020202] border-t border-white/5 relative">
-            <div class="world-container">
-                <div class="sphere"></div>
-                <div class="pulse-point" style="top: 35%; left: 25%;"></div> <div class="pulse-point" style="top: 45%; left: 75%;"></div> <div class="pulse-point" style="top: 65%; left: 40%;"></div> </div>
+            <div class="globe-wrapper">
+                <div class="globe"></div>
+                <div class="globe-overlay"></div>
+            </div>
 
-            <div class="max-w-4xl w-full">
-                <h3 class="text-3xl font-black text-center mb-16 tracking-widest uppercase">Expansão Global</h3>
-                <div class="grid md:grid-cols-2 gap-6">
+            <div class="max-w-4xl w-full text-center">
+                <h3 class="text-3xl font-black mb-16 tracking-widest uppercase">Alcance do Sistema</h3>
+                <div class="grid md:grid-cols-2 gap-8 text-left">
                     <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <span class="feature-tag">Priority</span>
-                        <h4 class="text-white font-black mt-4 mb-2 uppercase">Dominância USA</h4>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Nossos maiores clusters estão em Virginia (EUA), garantindo latência abaixo de 20ms para operações complexas e bypass de segurança.</p>
+                        <div class="flex items-center mb-4">
+                            <span class="indicator online"></span>
+                            <h4 class="text-white font-black uppercase text-sm">Brasil & EUA</h4>
+                        </div>
+                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Nossos maiores centros de usuários. A Eclipse é líder em engajamento nestes territórios, processando milhões de requisições diárias com foco em scripts e automação.</p>
                     </div>
                     <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <span class="feature-tag">Function</span>
-                        <h4 class="text-white font-black mt-4 mb-2 uppercase">Multitarefa Real</h4>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Geração de scripts Luau, Python, C++ e automações web simultâneas sem perda de contexto ou bloqueio de token.</p>
-                    </div>
-                    <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <span class="feature-tag">Privacy</span>
-                        <h4 class="text-white font-black mt-4 mb-2 uppercase">Proxy End-to-End</h4>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Sua conexão passa por 3 camadas de tunelamento antes de atingir o núcleo da IA, tornando sua origem indetectável.</p>
-                    </div>
-                    <div class="p-8 bg-white/[0.02] border border-white/5 rounded-2xl">
-                        <span class="feature-tag">Core</span>
-                        <h4 class="text-white font-black mt-4 mb-2 uppercase">Zero Moderação</h4>
-                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Diferente de IAs comerciais, a Eclipse não possui filtros de ética restritivos. Se você pode digitar, nós podemos processar.</p>
+                        <h4 class="text-white font-black mb-4 uppercase text-sm">Performance Pura</h4>
+                        <p class="text-gray-500 text-xs uppercase leading-relaxed">Uma IA sem as amarras tradicionais. Desenvolvida para ser direta, rápida e eficiente, independente de onde você esteja acessando.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <div id="chat-ui" class="bg-black">
-            <header class="p-6 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
-                <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase border border-white/10 px-6 py-3 rounded-xl">Terminal</button>
-                <div class="text-[9px] font-black text-gray-800 tracking-[0.5em] uppercase">Nodes: Active (USA-East)</div>
+        <div id="chat-ui">
+            <header class="p-6 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-xl">
+                <button onclick="toggleSidebar()" class="text-white font-black text-[10px] uppercase border border-white/10 px-6 py-3 rounded-lg">Menu</button>
+                <div class="text-[9px] font-black text-gray-500 tracking-[0.3em] uppercase">Eclipse v14.4 Stable</div>
                 <button onclick="location.reload()" class="text-gray-600 font-bold text-[10px] uppercase">Sair</button>
             </header>
             
-            <div id="chat-flow" class="flex-1 overflow-y-auto pt-6">
+            <div id="chat-flow" class="flex-1 overflow-y-auto">
                 <div id="welcome-area" class="h-full flex flex-col items-center justify-center text-center p-6">
-                    <h2 class="text-3xl md:text-5xl font-black mb-8 tracking-tighter">O que vamos construir?</h2>
+                    <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tighter">Como posso ajudar?</h2>
                     <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="setPrompt('Gere um script de bypass')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase font-black hover:bg-white hover:text-black transition">Bypass Script</button>
-                        <button onclick="setPrompt('Crie uma automação global')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase font-black hover:bg-white hover:text-black transition">Global Automation</button>
+                        <button onclick="setPrompt('Gere um script funcional')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[9px] uppercase font-black hover:bg-white hover:text-black transition">Scripting</button>
+                        <button onclick="setPrompt('Otimize meu fluxo')" class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[9px] uppercase font-black hover:bg-white hover:text-black transition">Otimização</button>
                     </div>
                 </div>
             </div>
             
-            <div class="p-6 md:p-10">
-                <div class="max-w-3xl mx-auto flex gap-4 bg-[#080808] p-2 border border-white/10 rounded-2xl focus-within:border-white/40 transition">
+            <div class="p-6 md:p-12 bg-gradient-to-t from-black to-transparent">
+                <div class="max-w-3xl mx-auto flex gap-4 bg-[#0a0a0a] p-2 border border-white/10 rounded-xl focus-within:border-white/30 transition">
                     <input id="user-input" type="text" placeholder="Aguardando comando..." class="flex-1 bg-transparent py-4 px-6 outline-none text-sm text-white">
-                    <button id="send-btn" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-xl">Enviar</button>
+                    <button id="send-btn" class="bg-white text-black px-10 py-4 font-black text-[10px] uppercase rounded-lg">Enviar</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // BACKGROUND PARTICLES
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
         function initBg() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            for(let i=0; i<60; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3, size: Math.random()*1.2 });
+            particles = [];
+            for(let i=0; i<50; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, size: Math.random()*1 });
         }
         function animateBg() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
             particles.forEach(p => {
                 p.x += p.vx; p.y += p.vy;
                 if(p.x<0 || p.x>canvas.width) p.vx*=-1; if(p.y<0 || p.y>canvas.height) p.vy*=-1;
@@ -142,30 +139,8 @@
         }
         initBg(); animateBg();
 
-        // LOGICA DE ESTADO
-        let chats = JSON.parse(localStorage.getItem('eclipse_v14_3')) || [];
+        let chats = JSON.parse(localStorage.getItem('eclipse_v14_4')) || [];
         let currentId = null;
-
-        // CONTROLE TOS
-        const tosBtn = document.getElementById('tos-btn');
-        if(localStorage.getItem('eclipse_tos_143')) { document.getElementById('tos-screen').style.display = 'none'; }
-        else {
-            let timer = 5;
-            const interval = setInterval(() => {
-                timer--;
-                tosBtn.innerText = `AGUARDE (${timer}S)`;
-                if(timer <= 0) {
-                    clearInterval(interval);
-                    tosBtn.innerText = "CONFIRMAR ACESSO";
-                    tosBtn.classList.remove('opacity-20', 'cursor-not-allowed');
-                }
-            }, 1000);
-        }
-
-        function acceptTos() {
-            localStorage.setItem('eclipse_tos_143', 'true');
-            document.getElementById('tos-screen').style.display = 'none';
-        }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
@@ -182,17 +157,17 @@
 
         function createNewChat() {
             const id = Date.now();
-            const newChat = { id, title: 'Nova Sessão', messages: [] };
-            chats.unshift(newChat);
+            chats.unshift({ id, title: 'Sessão ' + (chats.length + 1), messages: [] });
             currentId = id;
             save(); renderChatList(); renderMessages();
+            if(window.innerWidth < 768) toggleSidebar();
         }
 
         function switchChat(id) {
             currentId = id;
             renderChatList();
             renderMessages();
-            if(window.innerWidth < 768) toggleSidebar();
+            if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
         }
 
         function renderChatList() {
@@ -202,8 +177,8 @@
                 const div = document.createElement('div');
                 div.className = `chat-card flex justify-between items-center ${c.id === currentId ? 'active' : ''}`;
                 div.onclick = () => switchChat(c.id);
-                div.innerHTML = `<span class="text-[10px] uppercase truncate">${c.title}</span>
-                                 <button onclick="event.stopPropagation(); deleteChat(${c.id})" class="opacity-40 hover:opacity-100">✕</button>`;
+                div.innerHTML = `<span class="text-[10px] uppercase truncate font-bold">${c.title}</span>
+                                 <button onclick="event.stopPropagation(); deleteChat(${c.id})">✕</button>`;
                 list.appendChild(div);
             });
         }
@@ -214,10 +189,7 @@
             save(); renderChatList(); renderMessages();
         }
 
-        function setPrompt(txt) {
-            document.getElementById('user-input').value = txt;
-            handleSend();
-        }
+        function setPrompt(txt) { document.getElementById('user-input').value = txt; handleSend(); }
 
         async function handleSend() {
             const input = document.getElementById('user-input');
@@ -232,12 +204,11 @@
             renderMessages();
 
             const loader = createLoader();
-            // Simulação de resposta
             setTimeout(() => {
                 loader.remove();
-                chat.messages.push({ role: 'model', parts: [{ text: "Eclipse Node (USA) confirmou o processamento. Comando validado.\n\n```python\nprint('Protocolo Eclipse Ativo')\n```" }] });
+                chat.messages.push({ role: 'model', parts: [{ text: "Eclipse processou sua solicitação com sucesso.\n\n```python\nprint('Eclipse IA: Global and Powerful')\n```" }] });
                 save(); renderMessages();
-            }, 1000);
+            }, 800);
         }
 
         function renderMessages() {
@@ -245,21 +216,20 @@
             const welcome = document.getElementById('welcome-area');
             const chat = chats.find(c => c.id === currentId);
 
+            flow.innerHTML = '';
             if(!chat || chat.messages.length === 0) {
-                flow.innerHTML = '';
                 flow.appendChild(welcome);
                 welcome.style.display = 'flex';
                 return;
             }
 
             welcome.style.display = 'none';
-            flow.innerHTML = '';
             chat.messages.forEach(m => {
                 const isModel = m.role === 'model';
                 const div = document.createElement('div');
-                div.className = `py-10 border-b border-white/[0.02] ${isModel ? 'bg-white/[0.01]' : ''}`;
+                div.className = `py-10 ${isModel ? 'bg-white/[0.02]' : ''}`;
                 div.innerHTML = `<div class="msg-container">
-                    <span class="text-[9px] font-black text-gray-700 uppercase mb-4 block">${isModel ? 'Eclipse IA' : 'Admin'}</span>
+                    <span class="text-[9px] font-black text-gray-700 uppercase mb-4 block">${isModel ? 'Eclipse IA' : 'Usuário'}</span>
                     <div class="text-[14px] leading-relaxed text-gray-300">${isModel ? marked.parse(m.parts[0].text) : m.parts[0].text}</div>
                 </div>`;
                 flow.appendChild(div);
@@ -268,9 +238,9 @@
             flow.querySelectorAll('pre code').forEach(c => {
                 hljs.highlightElement(c);
                 const btn = document.createElement('button');
-                btn.className = 'absolute top-4 right-4 text-[10px] bg-white/5 px-3 py-1 rounded hover:bg-white hover:text-black transition uppercase font-bold';
+                btn.className = 'absolute top-4 right-4 text-[9px] bg-white/10 px-3 py-1 rounded uppercase font-bold';
                 btn.innerText = 'Copiar';
-                btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'Copiado'; setTimeout(() => btn.innerText='Copiar', 2000); };
+                btn.onclick = () => { navigator.clipboard.writeText(c.innerText); btn.innerText = 'OK'; setTimeout(() => btn.innerText='Copiar', 2000); };
                 c.parentElement.appendChild(btn);
             });
             flow.scrollTop = flow.scrollHeight;
@@ -279,17 +249,15 @@
         function createLoader() {
             const div = document.createElement('div');
             div.className = 'py-10 opacity-40';
-            div.innerHTML = `<div class="msg-container text-[9px] font-black uppercase tracking-widest animate-pulse">Acessando Servidores EUA...</div>`;
+            div.innerHTML = `<div class="msg-container text-[9px] font-black uppercase tracking-widest animate-pulse">Sincronizando...</div>`;
             document.getElementById('chat-flow').appendChild(div);
             document.getElementById('chat-flow').scrollTop = document.getElementById('chat-flow').scrollHeight;
             return div;
         }
 
-        function save() { localStorage.setItem('eclipse_v14_3', JSON.stringify(chats)); }
-
+        function save() { localStorage.setItem('eclipse_v14_4', JSON.stringify(chats)); }
         document.getElementById('send-btn').onclick = handleSend;
         document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
-        window.onresize = initBg;
     </script>
 </body>
 </html>
