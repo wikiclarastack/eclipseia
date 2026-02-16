@@ -5,10 +5,10 @@ export default async function handler(req, res) {
     const manutencaoAtiva = true;
 
     if (modelType === 'waver' && manutencaoAtiva) {
-        return res.status(503).json({ reply: "O motor Eclipse Waver está em manutenção técnica no momento." });
+        return res.status(503).json({ reply: "O motor Eclipse Waver está em manutenção técnica." });
     }
 
-    const SYSTEM_PROMPT = `${process.env.SYSTEM_PROMPT || "Você é a Eclipse IA."} O nome do usuário é ${userName}. Sempre que possível, use o nome dele para tornar a conversa próxima.`;
+    const SYSTEM_PROMPT = `${process.env.SYSTEM_PROMPT || "Você é a Eclipse IA."} O nome do usuário é ${userName || 'Usuário'}.`;
 
     try {
         let apiUrl, apiKey, body;
@@ -42,6 +42,6 @@ export default async function handler(req, res) {
         const reply = modelType === 'waver' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
         res.status(200).json({ reply });
     } catch (error) {
-        res.status(500).json({ reply: "Falha na conexão com o motor de inteligência." });
+        res.status(500).json({ reply: "Erro na conexão." });
     }
 }
