@@ -6,15 +6,15 @@ export default async function handler(req, res) {
     const { messages, userName, fileData } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
-        return res.status(200).json({ reply: "SISTEMA: Erro de configuração. A GEMINI_API_KEY não foi encontrada nas variáveis de ambiente da Vercel." });
+        return res.status(200).json({ reply: "Configuração incompleta: GEMINI_API_KEY ausente." });
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     try {
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.0-flash",
-            systemInstruction: `Você é o Eclipse Intelligence. Usuário: ${userName}. Responda de forma técnica.`
+            model: "gemini-1.5-flash",
+            systemInstruction: `Você é o Eclipse Intelligence. Usuário: ${userName}.`
         });
 
         const history = (messages || []).slice(0, -1).map(m => ({
@@ -40,6 +40,11 @@ export default async function handler(req, res) {
         res.status(200).json({ reply: response.text() });
 
     } catch (error) {
-        res.status(200).json({ reply: `ERRO DE CONEXÃO: ${error.message}. Verifique se sua chave API é válida ou se a cota expirou.` });
+        const isQuota = error.message.includes("429") || error.message.includes("quota");
+        res.status(200).json({ 
+            reply: isQuota 
+                ? "Limite de mensagens atingido. Aguarde 60 segundos e tente novamente." 
+                : `Erro técnico: ${error.message}` 
+        });
     }
 }
