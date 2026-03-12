@@ -1,49 +1,53 @@
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { messages, userName, fileData } = req.body;
-    const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
+    
+    if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ reply: "Erro: GEMINI_API_KEY não configurada no servidor." });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     try {
-        // 1. Processamento de Embeddings (Opcional para RAG futuro)
-        // Usando o novo gemini-embedding-2-preview com MRL (768 dimensões)
-        const embedModel = genAI.getGenerativeModel({ model: "gemini-embedding-2-preview" });
-        const lastMessage = messages[messages.length - 1].parts[0].text;
-        
-        await embedModel.embedContent({
-            content: { parts: [{ text: lastMessage }] },
-            outputDimensionality: 768,
-        });
-
-        // 2. Resposta do Chat (Gemini 2.0 Flash)
+        // Modelo Gemini 2.0 Flash (Mais estável e rápido para multimodal)
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.0-flash",
-            systemInstruction: `Você é o Eclipse Intelligence. Usuário: ${userName}. 
-            Seja minimalista, use LaTeX para fórmulas complexas e Markdown para códigos.`
+            systemInstruction: `Você é o Eclipse Intelligence. Usuário: ${userName}. Responda de forma técnica e elegante.`
         });
 
-        const chat = model.startChat({
-            history: messages.slice(0, -1).map(m => ({
-                role: m.role === 'model' ? 'model' : 'user',
-                parts: m.parts
-            }))
-        });
+        // Converte o histórico para o formato correto da SDK
+        const history = messages.slice(0, -1).map(m => ({
+            role: m.role === 'model' ? 'model' : 'user',
+            parts: [{ text: m.parts[0].text }]
+        }));
 
-        // Suporte Multimodal integrado
-        let promptParts = [{ text: lastMessage }];
-        if (fileData) {
+        const chat = model.startChat({ history });
+
+        // Monta o prompt final (Texto + Arquivo se houver)
+        let promptParts = [{ text: messages[messages.length - 1].parts[0].text }];
+        
+        if (fileData && fileData.base64) {
             promptParts.push({
-                inlineData: { mimeType: fileData.mimeType, data: fileData.base64 }
+                inlineData: {
+                    mimeType: fileData.mimeType,
+                    data: fileData.base64
+                }
             });
         }
 
         const result = await chat.sendMessage(promptParts);
         const response = await result.response;
-        
-        res.status(200).json({ reply: response.text() });
+        const text = response.text();
+
+        res.status(200).json({ reply: text });
+
     } catch (error) {
-        res.status(500).json({ reply: "Falha no núcleo Gemini 2.0. Verifique sua quota." });
+        console.error("Erro na API Gemini:", error);
+        res.status(500).json({ 
+            reply: `Erro no servidor: ${error.message}. Verifique os logs da Vercel.` 
+        });
     }
 }
